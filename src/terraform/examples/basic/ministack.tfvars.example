@@ -1,0 +1,31 @@
+# MiniStack/LocalStack Configuration
+# This file contains configuration for local testing with MiniStack/LocalStack
+# DO NOT commit this file if it contains real credentials!
+
+# AWS Configuration for MiniStack
+aws_region = "us-east-1"
+
+# MiniStack Settings
+aws_access_key                = "test"
+aws_secret_key                = "test"
+ministack_endpoint            = "http://localhost:4566"
+skip_credentials_validation   = true
+skip_metadata_api_check        = true
+skip_requesting_account_id    = true
+
+# VPC Configuration
+vpc_cidr             = "10.0.0.0/16"
+public_subnet_cidr   = "10.0.1.0/24"
+private_subnet_cidrs = ["10.0.2.0/24", "10.0.3.0/24"]
+availability_zones   = ["us-east-1a", "us-east-1b"]
+
+# Project Configuration
+environment  = "development"
+project_name = "sdd-infra"
+
+# Tags
+additional_tags = {
+  "Environment" = "development"
+  "Project"     = "sdd-infra"
+  "ManagedBy"   = "terraform"
+}
