@@ -108,3 +108,5 @@ As a developer, I need the networking module to work on both AWS and ministack e
 - No existing VPC conflicts with chosen CIDR blocks
 - Basic Terraform knowledge for module consumption
 - Kubernetes networking requirements follow standard patterns (no custom CNI requirements)
+- **For local development**: Access keys are used only with MiniStack/LocalStack for testing purposes
+- **Production deployments**: Must use OIDC-based authentication as defined in Spec 002
