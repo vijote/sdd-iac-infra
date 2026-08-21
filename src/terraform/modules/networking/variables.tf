@@ -1,6 +1,6 @@
-# Core Configuration Variables
+# VPC Configuration Variables
 variable "vpc_cidr" {
-  description = "CIDR block for the VPC"
+  description = "CIDR block for VPC (will be overridden for MiniStack)"
   type        = string
   default     = "10.0.0.0/16"
   
@@ -11,30 +11,30 @@ variable "vpc_cidr" {
 }
 
 variable "environment" {
-  description = "Environment name for resource tagging"
+  description = "Environment name for tagging"
   type        = string
-  
-  validation {
-    condition = contains(["development", "staging", "production"], var.environment)
-    error_message = "Environment must be one of: development, staging, production."
-  }
+  default     = "development"
 }
 
 variable "project_name" {
-  description = "Project name for resource tagging"
+  description = "Project name for tagging"
   type        = string
   default     = "sdd-infra"
 }
 
 variable "aws_region" {
-  description = "AWS region"
+  description = "AWS region (use 'local' for MiniStack)"
   type        = string
-  default     = "us-west-2"
+  default     = "us-east-1"
+  
+  validation {
+    condition = var.aws_region == "local" || can(regex("^[a-z0-9-]+$", var.aws_region))
+    error_message = "AWS region must be a valid region name or 'local' for MiniStack."
+  }
 }
 
-# Subnet Configuration Variables
 variable "public_subnet_cidr" {
-  description = "CIDR block for the public subnet"
+  description = "CIDR block for public subnet (will be overridden for MiniStack)"
   type        = string
   default     = "10.0.1.0/24"
   
@@ -45,23 +45,20 @@ variable "public_subnet_cidr" {
 }
 
 variable "private_subnet_cidrs" {
-  description = "CIDR blocks for the private subnets"
+  description = "List of CIDR blocks for private subnets (will be overridden for MiniStack)"
   type        = list(string)
   default     = ["10.0.2.0/24", "10.0.3.0/24"]
   
   validation {
-    condition = length(var.private_subnet_cidrs) == 2
-    error_message = "Exactly 2 private subnets must be specified."
-  }
-  
-  validation {
-    condition = alltrue([for cidr in var.private_subnet_cidrs : can(cidrhost(cidr, 0))])
+    condition = alltrue([
+      for cidr in var.private_subnet_cidrs : can(cidrhost(cidr, 0))
+    ])
     error_message = "All private subnet CIDRs must be valid CIDR blocks."
   }
 }
 
 variable "availability_zones" {
-  description = "List of availability zones (ignored for ministack)"
+  description = "List of availability zones (not used for MiniStack)"
   type        = list(string)
   default     = []
 }
@@ -85,7 +82,7 @@ variable "enable_ingress_sg" {
   default     = true
 }
 
-# Advanced Configuration Variables
+# DNS Configuration Variables
 variable "enable_dns_hostnames" {
   description = "Enable DNS hostnames in VPC"
   type        = bool
@@ -102,4 +99,35 @@ variable "additional_tags" {
   description = "Additional tags to apply to all resources"
   type        = map(string)
   default     = {}
+}
+
+# MiniStack-specific Variables
+variable "skip_credentials_validation" {
+  description = "Skip AWS credentials validation (for MiniStack)"
+  type        = bool
+  default     = false
+}
+
+variable "skip_metadata_api_check" {
+  description = "Skip metadata API check (for MiniStack)"
+  type        = bool
+  default     = false
+}
+
+variable "skip_requesting_account_id" {
+  description = "Skip requesting account ID (for MiniStack)"
+  type        = bool
+  default     = false
+}
+
+variable "s3_use_path_style" {
+  description = "Use path-style S3 URLs (for MiniStack)"
+  type        = bool
+  default     = false
+}
+
+variable "ministack_endpoint" {
+  description = "MiniStack endpoint URL"
+  type        = string
+  default     = ""
 }

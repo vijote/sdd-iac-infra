@@ -82,12 +82,12 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 2
 
-- [ ] T018 [P] [US2] Create control plane security group with kubelet, etcd, and VXLAN rules in src/terraform/modules/networking/main.tf
-- [ ] T019 [P] [US2] Create worker node security group with pod networking rules in src/terraform/modules/networking/main.tf
-- [ ] T020 [P] [US2] Create ingress security group with HTTP/HTTPS rules in src/terraform/modules/networking/main.tf
-- [ ] T021 [US2] Add security group rule for inter-SG communication for pod-to-pod traffic in src/terraform/modules/networking/main.tf
-- [ ] T022 [US2] Add security group outputs to src/terraform/modules/networking/outputs.tf
-- [ ] T023 [US2] Add security group enable/disable variables to src/terraform/modules/networking/variables.tf
+- [x] T018 [P] [US2] Create control plane security group with kubelet, etcd, and VXLAN rules in src/terraform/modules/networking/main.tf
+- [x] T019 [P] [US2] Create worker node security group with pod networking rules in src/terraform/modules/networking/main.tf
+- [x] T020 [P] [US2] Create ingress security group with HTTP/HTTPS rules in src/terraform/modules/networking/main.tf
+- [x] T021 [US2] Add security group rule for inter-SG communication for pod-to-pod traffic in src/terraform/modules/networking/main.tf
+- [x] T022 [US2] Add security group outputs to src/terraform/modules/networking/outputs.tf
+- [x] T023 [US2] Add security group enable/disable variables to src/terraform/modules/networking/variables.tf
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -101,11 +101,11 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T024 [P] [US3] Create AWS-specific variable defaults in src/terraform/environments/aws/terraform.tfvars
-- [ ] T025 [P] [US3] Create ministack-specific variable defaults in src/terraform/environments/ministack/terraform.tfvars
-- [ ] T026 [US3] Add provider-agnostic CIDR validation logic in src/terraform/modules/networking/variables.tf
-- [ ] T027 [US3] Update example usage to demonstrate provider-agnostic deployment in src/terraform/examples/basic/main.tf
-- [ ] T028 [US3] Add provider detection logic for environment-specific configurations in src/terraform/modules/networking/locals.tf
+- [x] T024 [P] [US3] Create AWS-specific variable defaults in src/terraform/environments/aws/terraform.tfvars
+- [x] T025 [P] [US3] Create ministack-specific variable defaults in src/terraform/environments/ministack/terraform.tfvars
+- [x] T026 [US3] Add provider-agnostic CIDR validation logic in src/terraform/modules/networking/variables.tf
+- [x] T027 [US3] Update example usage to demonstrate provider-agnostic deployment in src/terraform/examples/basic/main.tf
+- [x] T028 [US3] Add provider detection logic for environment-specific configurations in src/terraform/modules/networking/locals.tf
 
 **Checkpoint**: All user stories should now be independently functional
 

@@ -45,21 +45,30 @@ output "private_subnet_availability_zones" {
   value       = aws_subnet.private[*].availability_zone
 }
 
-# Security Group Outputs (TODO: Uncomment after User Story 2 implementation)
-# output "control_plane_security_group_id" {
-#   description = "ID of the control plane security group"
-#   value       = aws_security_group.control_plane[0].id
-# }
-# 
-# output "worker_node_security_group_id" {
-#   description = "ID of the worker node security group"
-#   value       = aws_security_group.worker_node[0].id
-# }
-# 
-# output "ingress_security_group_id" {
-#   description = "ID of the ingress security group"
-#   value       = aws_security_group.ingress[0].id
-# }
+# Security Group Outputs
+output "control_plane_security_group_id" {
+  description = "ID of the control plane security group"
+  value       = var.enable_control_plane_sg ? aws_security_group.control_plane[0].id : null
+}
+
+output "worker_node_security_group_id" {
+  description = "ID of the worker node security group"
+  value       = var.enable_worker_node_sg ? aws_security_group.worker_node[0].id : null
+}
+
+output "ingress_security_group_id" {
+  description = "ID of the ingress security group"
+  value       = var.enable_ingress_sg ? aws_security_group.ingress[0].id : null
+}
+
+output "security_group_ids" {
+  description = "Map of all security group IDs"
+  value = {
+    control_plane = var.enable_control_plane_sg ? aws_security_group.control_plane[0].id : null
+    worker_node  = var.enable_worker_node_sg ? aws_security_group.worker_node[0].id : null
+    ingress      = var.enable_ingress_sg ? aws_security_group.ingress[0].id : null
+  }
+}
 
 # Internet Gateway Outputs
 output "internet_gateway_id" {

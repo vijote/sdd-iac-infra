@@ -90,3 +90,28 @@ variable "additional_tags" {
   type        = map(string)
   default     = {}
 }
+
+# Security Group Configuration Variables
+variable "enable_control_plane_sg" {
+  description = "Create control plane security group"
+  type        = bool
+  default     = true
+}
+
+variable "enable_worker_node_sg" {
+  description = "Create worker node security group"
+  type        = bool
+  default     = true
+}
+
+variable "enable_ingress_sg" {
+  description = "Create ingress security group"
+  type        = bool
+  default     = true
+}
+
+variable "s3_use_path_style" {
+  description = "Use path-style S3 URLs (for MiniStack)"
+  type        = bool
+  default     = false
+}

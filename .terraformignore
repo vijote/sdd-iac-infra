@@ -1,0 +1,15 @@
+# Terraform ignore file
+.terraform/
+*.tfstate*
+*.tfvars
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
+.DS_Store
+*.log
+.env*
+*.backup
+*.bak
+*.tmp
+*.swp
+*.swo
+*~
