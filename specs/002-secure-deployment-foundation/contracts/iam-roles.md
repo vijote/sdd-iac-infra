@@ -13,6 +13,31 @@ terraform-{environment}-role
 
 Where `{environment}` is one of: `dev`, `staging`, `prod`
 
+### Terraform Data Source Integration
+
+Roles are referenced in Terraform using data sources:
+
+```hcl
+data "aws_iam_role" "terraform_role" {
+  name = "terraform-${var.environment}-role"
+}
+
+resource "aws_iam_role_policy" "terraform_permissions" {
+  name = "terraform-permissions"
+  role = data.aws_iam_role.terraform_role.id
+  
+  policy = jsonencode({
+    # Environment-specific permissions
+  })
+}
+```
+
+**Requirements**:
+- Roles MUST exist before Terraform apply
+- Role naming MUST follow the convention above
+- Terraform only manages policy attachments, not the role itself
+- Manual role creation MUST include proper OIDC trust relationship
+
 ### Required Trust Policy
 
 All roles MUST have the following trust policy structure:
@@ -301,14 +326,25 @@ validate_role() {
 
 ## Role Lifecycle Contract
 
-### Required Role Creation Process
+### Required Role Management Process
 
-1. **Create OIDC Provider** (if not exists)
-2. **Create IAM Role** with trust policy
-3. **Attach Policies** based on environment
-4. **Validate Configuration**
-5. **Test Role Assumption**
-6. **Document Role**
+**Note**: IAM roles are manually created in AWS Management Console by security team and referenced as data sources in Terraform.
+
+1. **Manual Role Creation** (Security Team)
+   - Create OIDC Provider (if not exists)
+   - Create IAM Role with trust policy
+   - Configure session tagging and conditions
+2. **Terraform Integration**
+   - Reference role using `data "aws_iam_role"`
+   - Attach environment-specific policies
+   - Validate policy attachments
+3. **Validation Process**
+   - Verify role exists and is accessible
+   - Test policy attachments
+   - Validate role assumption via GitHub Actions
+4. **Documentation**
+   - Document role naming convention
+   - Document required permissions per environment
 
 ### Required Role Update Process
 

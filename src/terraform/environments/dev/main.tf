@@ -42,9 +42,9 @@ output "vpc_id" {
   value       = module.networking.vpc_id
 }
 
-output "public_subnet_ids" {
-  description = "Public subnet IDs"
-  value       = module.networking.public_subnet_ids
+output "public_subnet_id" {
+  description = "Public subnet ID"
+  value       = module.networking.public_subnet_id
 }
 
 output "private_subnet_ids" {
