@@ -32,7 +32,6 @@ module "state" {
 
   environment          = "dev"
   state_bucket_prefix   = "terraform-state-dev"
-  lock_table_prefix     = "terraform-locks-dev"
   aws_region           = var.aws_region
 }
 
