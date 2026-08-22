@@ -40,7 +40,7 @@ variable "project_name" {
 variable "is_using_ministack" {
   description = "Is using ministack?"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "aws_region" {
@@ -49,7 +49,7 @@ variable "aws_region" {
   default     = "us-east-1"
 
   validation {
-    condition     = var.aws_region == "local" || can(regex("^[a-z0-9-]+$", var.aws_region))
+    condition     = var.is_using_ministack || can(regex("^[a-z0-9-]+$", var.aws_region))
     error_message = "AWS region must be a valid region name or 'local' for MiniStack."
   }
 }

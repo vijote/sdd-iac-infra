@@ -55,7 +55,7 @@ locals {
   )
 
   # Provider-specific CIDR detection
-  is_ministack = var.aws_region == "local"
+  is_ministack = var.is_using_ministack
 
   # Dynamic CIDR selection based on provider
   vpc_cidr = local.is_ministack ? "172.18.0.0/16" : var.vpc_cidr
@@ -111,7 +111,7 @@ locals {
     ministack = {
       cidr_validation   = local.vpc_cidr == "172.18.0.0/16"
       subnet_validation = length(local.private_subnet_cidrs) == 2
-      region_validation = var.aws_region == "local"
+      region_validation = var.is_using_ministack
     }
   }
 
