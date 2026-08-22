@@ -13,7 +13,6 @@ on:
         type: choice
         options:
           - dev
-          - staging
           - prod
 
 permissions:
@@ -25,6 +24,7 @@ permissions:
 env:
   ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
   AWS_REGION: us-east-1
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
 
 jobs:
   terraform-plan:
@@ -38,7 +38,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/terraform-${{ env.ENVIRONMENT }}-role
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/terraform-${{ env.ENVIRONMENT }}-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform

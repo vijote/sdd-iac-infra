@@ -9,7 +9,6 @@ on:
         type: choice
         options:
           - dev
-          - staging
           - prod
       confirm_destroy:
         description: 'Type "destroy" to confirm'
@@ -23,6 +22,7 @@ permissions:
 env:
   ENVIRONMENT: ${{ github.event.inputs.environment }}
   AWS_REGION: us-east-1
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
 
 jobs:
   terraform-destroy:
@@ -44,7 +44,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/terraform-${{ env.ENVIRONMENT }}-role
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/terraform-${{ env.ENVIRONMENT }}-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
@@ -68,30 +68,6 @@ jobs:
         run: terraform plan -input=false -no-color -destroy -out=destroy-plan
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
 
-      - name: Manual Approval for Destroy
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: vijote
-          minimum-approvals: 2
-          issue-title: "🚨 DESTROY APPROVAL REQUIRED - ${{ env.ENVIRONMENT }}"
-          issue-body: |
-            ## ⚠️ CRITICAL: Infrastructure Destruction Request
-            
-            **Environment**: ${{ env.ENVIRONMENT }}
-            **Requested by**: ${{ github.actor }}
-            **Timestamp**: $(date -u)
-            
-            This action will **PERMANENTLY DELETE** all infrastructure in the ${{ env.ENVIRONMENT }} environment.
-            
-            ### Resources to be Destroyed:
-            ```
-            $(terraform show -json destroy-plan | jq -r '.resource_changes[] | "- \(.type): \(.change.actions | join(", "))"' 2>/dev/null || echo "Unable to load plan")
-            ```
-            
-            **WARNING**: This action cannot be undone!
-            
-            Approve only if you are absolutely certain this environment should be destroyed.
 
       - name: Terraform Destroy
         id: destroy

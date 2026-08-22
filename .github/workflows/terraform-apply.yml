@@ -13,13 +13,7 @@ on:
         type: choice
         options:
           - dev
-          - staging
           - prod
-      force_apply:
-        description: 'Force apply without approval'
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   id-token: write          # Required for OIDC
@@ -28,6 +22,7 @@ permissions:
 env:
   ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
   AWS_REGION: us-east-1
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
 
 jobs:
   terraform-apply:
@@ -41,7 +36,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/terraform-${{ env.ENVIRONMENT }}-role
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/terraform-${{ env.ENVIRONMENT }}-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
@@ -65,25 +60,6 @@ jobs:
         run: terraform plan -input=false -no-color -out=tfplan
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
 
-      - name: Check for Approval (Production)
-        if: env.ENVIRONMENT == 'prod' && github.event.inputs.force_apply != 'true'
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: vijote
-          minimum-approvals: 1
-          issue-title: "Production Deployment Approval Required"
-          issue-body: "Please approve the production deployment for environment: ${{ env.ENVIRONMENT }}"
-
-      - name: Check for Approval (Staging)
-        if: env.ENVIRONMENT == 'staging' && secrets.STAGING_APPROVAL_REQUIRED == 'true' && github.event.inputs.force_apply != 'true'
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: vijote
-          minimum-approvals: 1
-          issue-title: "Staging Deployment Approval Required"
-          issue-body: "Please approve the staging deployment for environment: ${{ env.ENVIRONMENT }}"
 
       - name: Terraform Apply
         id: apply
