@@ -65,8 +65,8 @@ output "security_group_ids" {
   description = "Map of all security group IDs"
   value = {
     control_plane = var.enable_control_plane_sg ? aws_security_group.control_plane[0].id : null
-    worker_node  = var.enable_worker_node_sg ? aws_security_group.worker_node[0].id : null
-    ingress      = var.enable_ingress_sg ? aws_security_group.ingress[0].id : null
+    worker_node   = var.enable_worker_node_sg ? aws_security_group.worker_node[0].id : null
+    ingress       = var.enable_ingress_sg ? aws_security_group.ingress[0].id : null
   }
 }
 

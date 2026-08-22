@@ -41,7 +41,7 @@ ec2:DisassociateRouteTable
 **Setup Commands**:
 ```bash
 # Clone repository and navigate to module
-git clone <repository-url>
+git clone https://github.com/your-org/sdd-infra.git
 cd sdd-infra
 
 # Create test workspace
@@ -50,6 +50,7 @@ terraform -chdir=src/terraform/examples/basic init
 
 # Apply with default configuration
 terraform -chdir=src/terraform/examples/basic apply -auto-approve \
+  -var-file="../../environments/aws/terraform.tfvars" \
   -var="environment=development" \
   -var="project_name=test-vpc"
 ```

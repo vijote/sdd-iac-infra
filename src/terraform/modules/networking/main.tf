@@ -3,13 +3,8 @@ resource "aws_vpc" "main" {
   cidr_block           = local.vpc_cidr
   enable_dns_hostnames = var.enable_dns_hostnames
   enable_dns_support   = var.enable_dns_support
-  
-  tags = merge(
-    local.common_tags,
-    {
-      Name = "${var.project_name}-vpc"
-    }
-  )
+
+  tags = local.vpc_tags
 }
 
 # Public Subnet
@@ -18,7 +13,7 @@ resource "aws_subnet" "public" {
   cidr_block              = local.public_subnet_cidr
   map_public_ip_on_launch = true
   availability_zone       = local.use_availability_zones ? var.availability_zones[0] : null
-  
+
   tags = merge(
     local.common_tags,
     {
@@ -31,12 +26,12 @@ resource "aws_subnet" "public" {
 # Private Subnets
 resource "aws_subnet" "private" {
   count = 2
-  
+
   vpc_id                  = aws_vpc.main.id
   cidr_block              = local.private_subnet_cidrs[count.index]
   map_public_ip_on_launch = false
   availability_zone       = local.use_availability_zones && count.index < length(var.availability_zones) ? var.availability_zones[count.index] : null
-  
+
   tags = merge(
     local.common_tags,
     {
@@ -49,24 +44,19 @@ resource "aws_subnet" "private" {
 # Internet Gateway
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
-  
-  tags = merge(
-    local.common_tags,
-    {
-      Name = "${var.project_name}-igw"
-    }
-  )
+
+  tags = local.internet_gateway_tags
 }
 
 # Public Route Table
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
-  
+
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.main.id
   }
-  
+
   tags = merge(
     local.common_tags,
     {
@@ -79,11 +69,11 @@ resource "aws_route_table" "public" {
 # Private Route Tables
 resource "aws_route_table" "private" {
   count = 2
-  
+
   vpc_id = aws_vpc.main.id
-  
+
   # Only local route (no internet gateway for cost optimization)
-  
+
   tags = merge(
     local.common_tags,
     {
@@ -108,11 +98,11 @@ resource "aws_route_table_association" "private" {
 # Control Plane Security Group
 resource "aws_security_group" "control_plane" {
   count = var.enable_control_plane_sg ? 1 : 0
-  
+
   name_prefix = "${var.project_name}-control-plane-"
   description = "Security group for Kubernetes control plane nodes"
   vpc_id      = aws_vpc.main.id
-  
+
   tags = merge(
     local.common_tags,
     {
@@ -125,7 +115,7 @@ resource "aws_security_group" "control_plane" {
 # Control Plane Ingress Rules
 resource "aws_security_group_rule" "control_plane_kubelet" {
   count = var.enable_control_plane_sg ? 1 : 0
-  
+
   type              = "ingress"
   from_port         = 6443
   to_port           = 6443
@@ -137,7 +127,7 @@ resource "aws_security_group_rule" "control_plane_kubelet" {
 
 resource "aws_security_group_rule" "control_plane_etcd" {
   count = var.enable_control_plane_sg ? 1 : 0
-  
+
   type              = "ingress"
   from_port         = 2379
   to_port           = 2380
@@ -149,7 +139,7 @@ resource "aws_security_group_rule" "control_plane_etcd" {
 
 resource "aws_security_group_rule" "control_plane_vxlan" {
   count = var.enable_control_plane_sg ? 1 : 0
-  
+
   type              = "ingress"
   from_port         = 4789
   to_port           = 4789
@@ -162,7 +152,7 @@ resource "aws_security_group_rule" "control_plane_vxlan" {
 # Control Plane Egress Rule
 resource "aws_security_group_rule" "control_plane_egress" {
   count = var.enable_control_plane_sg ? 1 : 0
-  
+
   type              = "egress"
   from_port         = 0
   to_port           = 0
@@ -175,11 +165,11 @@ resource "aws_security_group_rule" "control_plane_egress" {
 # Worker Node Security Group
 resource "aws_security_group" "worker_node" {
   count = var.enable_worker_node_sg ? 1 : 0
-  
+
   name_prefix = "${var.project_name}-worker-node-"
   description = "Security group for Kubernetes worker nodes"
   vpc_id      = aws_vpc.main.id
-  
+
   tags = merge(
     local.common_tags,
     {
@@ -192,7 +182,7 @@ resource "aws_security_group" "worker_node" {
 # Worker Node Ingress Rules
 resource "aws_security_group_rule" "worker_node_vxlan" {
   count = var.enable_worker_node_sg ? 1 : 0
-  
+
   type              = "ingress"
   from_port         = 4789
   to_port           = 4789
@@ -204,7 +194,7 @@ resource "aws_security_group_rule" "worker_node_vxlan" {
 
 resource "aws_security_group_rule" "worker_node_nodeport" {
   count = var.enable_worker_node_sg ? 1 : 0
-  
+
   type              = "ingress"
   from_port         = 30000
   to_port           = 32767
@@ -217,7 +207,7 @@ resource "aws_security_group_rule" "worker_node_nodeport" {
 # Worker Node Egress Rule
 resource "aws_security_group_rule" "worker_node_egress" {
   count = var.enable_worker_node_sg ? 1 : 0
-  
+
   type              = "egress"
   from_port         = 0
   to_port           = 0
@@ -230,11 +220,11 @@ resource "aws_security_group_rule" "worker_node_egress" {
 # Ingress Security Group
 resource "aws_security_group" "ingress" {
   count = var.enable_ingress_sg ? 1 : 0
-  
+
   name_prefix = "${var.project_name}-ingress-"
   description = "Security group for Kubernetes ingress controllers"
   vpc_id      = aws_vpc.main.id
-  
+
   tags = merge(
     local.common_tags,
     {
@@ -247,7 +237,7 @@ resource "aws_security_group" "ingress" {
 # Ingress Ingress Rules
 resource "aws_security_group_rule" "ingress_http" {
   count = var.enable_ingress_sg ? 1 : 0
-  
+
   type              = "ingress"
   from_port         = 80
   to_port           = 80
@@ -259,7 +249,7 @@ resource "aws_security_group_rule" "ingress_http" {
 
 resource "aws_security_group_rule" "ingress_https" {
   count = var.enable_ingress_sg ? 1 : 0
-  
+
   type              = "ingress"
   from_port         = 443
   to_port           = 443
@@ -272,7 +262,7 @@ resource "aws_security_group_rule" "ingress_https" {
 # Ingress Egress Rule
 resource "aws_security_group_rule" "ingress_egress" {
   count = var.enable_ingress_sg ? 1 : 0
-  
+
   type              = "egress"
   from_port         = 0
   to_port           = 0
@@ -285,7 +275,7 @@ resource "aws_security_group_rule" "ingress_egress" {
 # Inter-Security Group Communication for Pod-to-Pod Traffic
 resource "aws_security_group_rule" "control_plane_to_worker" {
   count = var.enable_control_plane_sg && var.enable_worker_node_sg ? 1 : 0
-  
+
   type                     = "ingress"
   from_port                = 0
   to_port                  = 0
@@ -297,7 +287,7 @@ resource "aws_security_group_rule" "control_plane_to_worker" {
 
 resource "aws_security_group_rule" "worker_to_control_plane" {
   count = var.enable_control_plane_sg && var.enable_worker_node_sg ? 1 : 0
-  
+
   type                     = "ingress"
   from_port                = 0
   to_port                  = 0
@@ -309,7 +299,7 @@ resource "aws_security_group_rule" "worker_to_control_plane" {
 
 resource "aws_security_group_rule" "worker_to_worker" {
   count = var.enable_worker_node_sg ? 1 : 0
-  
+
   type                     = "ingress"
   from_port                = 0
   to_port                  = 0
@@ -321,7 +311,7 @@ resource "aws_security_group_rule" "worker_to_worker" {
 
 resource "aws_security_group_rule" "ingress_to_worker" {
   count = var.enable_ingress_sg && var.enable_worker_node_sg ? 1 : 0
-  
+
   type                     = "ingress"
   from_port                = 0
   to_port                  = 0
