@@ -94,7 +94,7 @@ As a platform engineer, I need remote Terraform state with locking so that team 
 - **SC-003**: Team members can run concurrent deployments without state corruption incidents
 - **SC-004**: Deployment time from code merge to infrastructure update is under 10 minutes
 - **SC-005**: Security audit shows zero static AWS credentials stored in CI/CD systems
-- **SC-006**: 99% of deployments complete without manual intervention
+- **SC-006**: 99% of deployments complete without manual intervention (baseline: current manual deployments have ~70% success rate)
 
 ## Authentication Scope & Boundaries
 
@@ -105,7 +105,7 @@ As a platform engineer, I need remote Terraform state with locking so that team 
 - **Reference**: This is the primary focus of Spec 002
 
 ### Local Development
-- **Allowed**: Access keys with MiniStack/LocalStack for testing
+- **Allowed**: Access keys with MiniStack for testing
 - **Scope**: As defined in Spec 001 for local development only
 - **Boundary**: Never used in production or CI/CD systems
 
@@ -124,5 +124,5 @@ As a platform engineer, I need remote Terraform state with locking so that team 
 - Organization has security policies requiring least-privilege access
 - Multiple deployment environments exist (development, staging, production)
 - **Production deployments**: Must use OIDC authentication via GitHub Actions (no static credentials)
-- **Local development**: May use access keys with MiniStack/LocalStack as defined in Spec 001
+- **Local development**: May use access keys with MiniStack as defined in Spec 001
 - **CI/CD systems**: GitHub Actions is the primary deployment mechanism

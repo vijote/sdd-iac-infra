@@ -1,0 +1,134 @@
+name: "Terraform Destroy"
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment to destroy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      confirm_destroy:
+        description: 'Type "destroy" to confirm'
+        required: true
+        default: ''
+
+permissions:
+  id-token: write          # Required for OIDC
+  contents: read          # Required for checkout
+
+env:
+  ENVIRONMENT: ${{ github.event.inputs.environment }}
+  AWS_REGION: us-east-1
+
+jobs:
+  terraform-destroy:
+    name: "Terraform Destroy"
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Validate Destroy Confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm_destroy }}" != "destroy" ]; then
+            echo "❌ Destroy confirmation not provided. Exiting."
+            echo "To destroy resources, please type 'destroy' in the confirm_destroy input."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/terraform-${{ env.ENVIRONMENT }}-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ">= 1.0"
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        id: init
+        run: terraform init -input=false
+        working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
+
+      - name: Terraform Plan (Destroy)
+        id: plan
+        run: terraform plan -input=false -no-color -destroy -out=destroy-plan
+        working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
+
+      - name: Manual Approval for Destroy
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: vijote
+          minimum-approvals: 2
+          issue-title: "🚨 DESTROY APPROVAL REQUIRED - ${{ env.ENVIRONMENT }}"
+          issue-body: |
+            ## ⚠️ CRITICAL: Infrastructure Destruction Request
+            
+            **Environment**: ${{ env.ENVIRONMENT }}
+            **Requested by**: ${{ github.actor }}
+            **Timestamp**: $(date -u)
+            
+            This action will **PERMANENTLY DELETE** all infrastructure in the ${{ env.ENVIRONMENT }} environment.
+            
+            ### Resources to be Destroyed:
+            ```
+            $(terraform show -json destroy-plan | jq -r '.resource_changes[] | "- \(.type): \(.change.actions | join(", "))"' 2>/dev/null || echo "Unable to load plan")
+            ```
+            
+            **WARNING**: This action cannot be undone!
+            
+            Approve only if you are absolutely certain this environment should be destroyed.
+
+      - name: Terraform Destroy
+        id: destroy
+        run: terraform apply -input=false -auto-approve destroy-plan
+        working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
+
+      - name: Create Destruction Summary
+        run: |
+          echo "## 💥 Destruction Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: ${{ env.ENVIRONMENT }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ${{ steps.destroy.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "**Requested by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Destroyed Resources" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          terraform show -json destroy-plan | jq -r '.resource_changes[] | "\(.type): \(.change.actions | join(", "))"' >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "Unable to load destroyed resources"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Notification on Success
+        if: steps.destroy.outcome == 'success'
+        run: |
+          echo "💥 Terraform destroy completed successfully for ${{ env.ENVIRONMENT }} environment"
+          echo "All resources have been permanently deleted."
+
+      - name: Notification on Failure
+        if: steps.destroy.outcome == 'failure'
+        run: |
+          echo "❌ Terraform destroy failed for ${{ env.ENVIRONMENT }} environment"
+          echo "Some resources may still exist. Please check the AWS console."
+          exit 1
+
+      - name: Final State Backup
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: terraform-final-state-${{ env.ENVIRONMENT }}-${{ github.run_number }}
+          path: src/terraform/environments/${{ env.ENVIRONMENT }}/terraform.tfstate
+          retention-days: 365

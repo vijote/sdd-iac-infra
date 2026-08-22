@@ -1,0 +1,123 @@
+name: "Terraform Apply"
+
+on:
+  push:
+    branches: [main]
+    paths: ["src/terraform/**"]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      force_apply:
+        description: 'Force apply without approval'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  id-token: write          # Required for OIDC
+  contents: read          # Required for checkout
+
+env:
+  ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+  AWS_REGION: us-east-1
+
+jobs:
+  terraform-apply:
+    name: "Terraform Apply"
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/terraform-${{ env.ENVIRONMENT }}-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ">= 1.0"
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        id: init
+        run: terraform init -input=false
+        working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -input=false -no-color -out=tfplan
+        working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
+
+      - name: Check for Approval (Production)
+        if: env.ENVIRONMENT == 'prod' && github.event.inputs.force_apply != 'true'
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: vijote
+          minimum-approvals: 1
+          issue-title: "Production Deployment Approval Required"
+          issue-body: "Please approve the production deployment for environment: ${{ env.ENVIRONMENT }}"
+
+      - name: Check for Approval (Staging)
+        if: env.ENVIRONMENT == 'staging' && secrets.STAGING_APPROVAL_REQUIRED == 'true' && github.event.inputs.force_apply != 'true'
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: vijote
+          minimum-approvals: 1
+          issue-title: "Staging Deployment Approval Required"
+          issue-body: "Please approve the staging deployment for environment: ${{ env.ENVIRONMENT }}"
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -input=false -auto-approve tfplan
+        working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
+
+      - name: Create Deployment Summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: ${{ env.ENVIRONMENT }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ${{ steps.apply.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Applied Changes" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          terraform show -json tfplan | jq -r '.resource_changes[] | "\(.type): \(.change.actions | join(", "))"' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Notification on Success
+        if: steps.apply.outcome == 'success'
+        run: |
+          echo "✅ Terraform apply completed successfully for ${{ env.ENVIRONMENT }} environment"
+
+      - name: Notification on Failure
+        if: steps.apply.outcome == 'failure'
+        run: |
+          echo "❌ Terraform apply failed for ${{ env.ENVIRONMENT }} environment"
+          exit 1
+
+      - name: Upload State Backup
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: terraform-state-backup-${{ env.ENVIRONMENT }}-${{ github.run_number }}
+          path: src/terraform/environments/${{ env.ENVIRONMENT }}/terraform.tfstate
+          retention-days: 90

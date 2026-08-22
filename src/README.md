@@ -12,9 +12,13 @@ src/
 │   ├── modules/           # Reusable Terraform modules
 │   │   ├── networking/    # VPC, subnets, security groups (Spec 001)
 │   │   ├── iam/           # IAM roles & policies (Spec 002)
+│   │   ├── state/         # Remote state management (Spec 002)
 │   │   ├── compute/       # EC2 instances & kubeadm bootstrap (Spec 003)
 │   │   └── (future phases)
 │   ├── environments/      # Environment-specific configurations
+│   │   ├── dev/          # Development environment
+│   │   ├── staging/      # Staging environment
+│   │   ├── prod/         # Production environment
 │   │   ├── aws/          # Real AWS deployment
 │   │   └── ministack/    # Local ministack testing
 │   └── shared/           # Shared configuration (versions, providers)
@@ -256,6 +260,71 @@ Before merging:
 - [ ] IAM policies are scoped appropriately
 - [ ] Cost estimate is within budget (<$50/month)
 - [ ] Documentation updated (comments, README, decision log)
+
+---
+
+## 🚀 Deployment Guide
+
+### Prerequisites
+
+1. **AWS Account**: With appropriate permissions for Terraform operations
+2. **GitHub Repository**: With Actions enabled
+3. **Repository Secrets**: Configure required secrets (see [Repository Secrets Guide](../../docs/repository-secrets-guide.md))
+
+### Automated Deployment (Recommended)
+
+The project uses GitHub Actions for automated deployments with OIDC authentication:
+
+1. **Development**: 
+   - Create a pull request → triggers `terraform plan`
+   - Merge to main → triggers `terraform apply` to dev environment
+
+2. **Staging**: 
+   - Manual workflow execution with environment selection
+   - Optional approval based on `STAGING_APPROVAL_REQUIRED` secret
+
+3. **Production**: 
+   - Manual workflow execution with environment selection
+   - **Mandatory approval** required before apply
+
+### Manual Deployment
+
+For local development or troubleshooting:
+
+```bash
+# Navigate to environment directory
+cd src/terraform/environments/dev
+
+# Initialize Terraform
+terraform init
+
+# Plan changes
+terraform plan -var-file="terraform.tfvars"
+
+# Apply changes
+terraform apply -var-file="terraform.tfvars"
+```
+
+### Environment Configuration
+
+Each environment has its own configuration:
+- **Dev**: Automatic deployment, minimal approvals
+- **Staging**: Optional approvals, extended testing
+- **Prod**: Mandatory approvals, enhanced monitoring
+
+### Security Features
+
+- **OIDC Authentication**: No static AWS credentials stored
+- **Least Privilege IAM**: Environment-specific roles with minimal permissions
+- **State Locking**: Prevents concurrent state modifications
+- **Audit Logging**: Complete audit trail via CloudTrail
+
+### Monitoring & Troubleshooting
+
+- **GitHub Actions**: Check workflow logs for deployment status
+- **AWS CloudTrail**: Review API calls and authentication events
+- **Terraform State**: Inspect state files for resource status
+- See [Troubleshooting Guide](../../docs/troubleshooting-guide.md) for common issues
 
 ---
 
