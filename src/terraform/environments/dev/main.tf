@@ -67,17 +67,12 @@ output "ingress_security_group_id" {
   value       = module.networking.ingress_security_group_id
 }
 
-output "terraform_dev_role_arn" {
+output "terraform_role_arn" {
   description = "Terraform dev role ARN"
-  value       = module.iam.terraform_dev_role_arn
+  value       = module.iam.terraform_role_arn
 }
 
 output "state_bucket_name" {
   description = "S3 bucket name for Terraform state"
   value       = module.state.state_bucket_name
-}
-
-output "lock_table_name" {
-  description = "DynamoDB table name for state locking"
-  value       = module.state.lock_table_name
 }
