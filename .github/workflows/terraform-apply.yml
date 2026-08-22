@@ -25,6 +25,8 @@ env:
   AWS_TERRAFORM_ROLE: ${{ vars.AWS_TERRAFORM_ROLE }}
   STATE_BUCKET_NAME: ${{ vars.STATE_BUCKET_NAME }}
   TF_VAR_aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+  TF_VAR_aws_terraform_role: ${{ vars.AWS_TERRAFORM_ROLE }}
+  TF_VAR_aws_state_bucket_name: ${{ vars.STATE_BUCKET_NAME }}
 
 jobs:
   terraform-apply:
@@ -75,11 +77,3 @@ jobs:
         id: apply
         run: terraform apply -input=false -auto-approve tfplan
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
-
-      - name: Upload State Backup
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: terraform-state-backup-${{ env.ENVIRONMENT }}-${{ github.run_number }}
-          path: src/terraform/environments/${{ env.ENVIRONMENT }}/terraform.tfstate
-          retention-days: 90

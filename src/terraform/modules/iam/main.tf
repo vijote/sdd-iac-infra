@@ -1,6 +1,6 @@
 # Data source for manually created OIDC role
 data "aws_iam_role" "terraform_role" {
-  name = "terraform-${var.environment}-role"
+  name = "${var.aws_terraform_role}"
 }
 
 # Environment-specific least-privilege policies
@@ -93,8 +93,8 @@ resource "aws_iam_role_policy" "terraform_permissions" {
           "s3:ListBucketVersions"
         ]
         Resource = [
-          "arn:aws:s3:::terraform-state-${var.environment}*",
-          "arn:aws:s3:::terraform-state-${var.environment}*/*"
+          "arn:aws:s3:::${var.aws_state_bucket_name}*",
+          "arn:aws:s3:::${var.aws_state_bucket_name}*/*"
         ]
       },
       {

@@ -31,7 +31,6 @@ module "state" {
   source = "../../modules/state"
 
   environment          = "dev"
-  state_bucket_prefix   = "terraform-state-dev"
   aws_region           = var.aws_region
 }
 

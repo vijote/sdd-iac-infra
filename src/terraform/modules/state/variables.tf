@@ -8,8 +8,8 @@ variable "environment" {
   }
 }
 
-variable "state_bucket_prefix" {
-  description = "Prefix for the S3 bucket name"
+variable "aws_state_bucket_name" {
+  description = "S3 state bucket name"
   type        = string
   default     = "terraform-state"
 }

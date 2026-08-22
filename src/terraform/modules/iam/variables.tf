@@ -23,3 +23,15 @@ variable "aws_region" {
   type        = string
   default     = "us-east-1"
 }
+
+variable "aws_terraform_role" {
+  description = "AWS Terraform Role"
+  type        = string
+  default     = "terraform-role"
+}
+
+variable "aws_state_bucket_name" {
+  description = "AWS S3 State Bucket"
+  type        = string
+  default     = "terraform-role"
+}
