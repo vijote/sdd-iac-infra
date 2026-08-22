@@ -8,16 +8,6 @@ variable "environment" {
   }
 }
 
-variable "github_repository" {
-  description = "GitHub repository in format 'owner/repo'"
-  type        = string
-  
-  validation {
-    condition     = can(regex("^[\\w\\.-]+/[\\w\\.-]+$", var.github_repository))
-    error_message = "GitHub repository must be in format 'owner/repo'."
-  }
-}
-
 variable "aws_account_id" {
   description = "AWS Account ID"
   type        = string

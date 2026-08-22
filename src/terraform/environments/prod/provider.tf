@@ -17,11 +17,6 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "github_repository" {
-  description = "GitHub repository in format 'owner/repo'"
-  type        = string
-}
-
 variable "aws_account_id" {
   description = "AWS Account ID"
   type        = string
