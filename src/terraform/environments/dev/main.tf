@@ -9,7 +9,6 @@ module "networking" {
   vpc_cidr          = "10.0.0.0/16"
   environment       = "dev"
   project_name      = "sdd-infra"
-  is_using_ministack = false
   aws_region        = var.aws_region
 
   # Subnet Configuration (using defaults from module)
@@ -21,17 +20,20 @@ module "networking" {
 module "iam" {
   source = "../../modules/iam"
 
-  environment    = "dev"
-  aws_account_id = var.aws_account_id
-  aws_region     = var.aws_region
+  environment           = "dev"
+  aws_account_id        = var.aws_account_id
+  aws_state_bucket_name = var.aws_state_bucket_name
+  aws_region            = var.aws_region
+  aws_terraform_role    = var.aws_terraform_role
 }
 
 # State Module - Creates S3 bucket and DynamoDB table for remote state
 module "state" {
   source = "../../modules/state"
 
-  environment          = "dev"
-  aws_region           = var.aws_region
+  environment           = "dev"
+  aws_state_bucket_name = var.aws_state_bucket_name
+  aws_region            = var.aws_region
 }
 
 # Outputs for easy access to resource information

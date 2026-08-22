@@ -21,3 +21,13 @@ variable "aws_account_id" {
   description = "AWS Account ID"
   type        = string
 }
+
+variable "aws_state_bucket_name" {
+  description = "AWS S3 State Bucket"
+  type        = string
+}
+
+variable "aws_terraform_role" {
+  description = "AWS Terraform Role"
+  type        = string
+}
