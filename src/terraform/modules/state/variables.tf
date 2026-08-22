@@ -14,11 +14,6 @@ variable "state_bucket_prefix" {
   default     = "terraform-state"
 }
 
-variable "lock_table_prefix" {
-  description = "Prefix for the DynamoDB table name"
-  type        = string
-  default     = "terraform-locks"
-}
 
 variable "aws_region" {
   description = "AWS region for resources"
