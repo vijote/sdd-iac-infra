@@ -79,7 +79,8 @@ locals {
     for i, cidr1 in local.subnet_cidrs : [
       for j, cidr2 in local.subnet_cidrs :
       i < j && can(cidrhost(cidr1, 0)) && can(cidrhost(cidr2, 0)) &&
-      !cidr_contains(cidr1, cidr2) && !cidr_contains(cidr2, cidr1)
+      # Simple check: if the first host IPs are the same, there's overlap
+      cidrhost(cidr1, 0) != cidrhost(cidr2, 0)
     ]
   ]
 

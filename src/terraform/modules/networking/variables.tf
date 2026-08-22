@@ -37,6 +37,12 @@ variable "project_name" {
   default     = "sdd-infra"
 }
 
+variable "is_using_ministack" {
+  description = "Is using ministack?"
+  type        = bool
+  default     = true
+}
+
 variable "aws_region" {
   description = "AWS region (use 'local' for MiniStack)"
   type        = string
