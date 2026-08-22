@@ -44,14 +44,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials (Bootstrap)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_BOOTSTRAP_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
       # Step 2: Assume target
       - name: Assume Terraform Target Role
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_TERRAFORM_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
