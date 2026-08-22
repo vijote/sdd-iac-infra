@@ -24,6 +24,7 @@ env:
   AWS_BOOTSTRAP_ROLE: ${{ vars.AWS_BOOTSTRAP_ROLE }}
   AWS_TERRAFORM_ROLE: ${{ vars.AWS_TERRAFORM_ROLE }}
   STATE_BUCKET_NAME: ${{ vars.STATE_BUCKET_NAME }}
+  TF_VAR_aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
 
 jobs:
   terraform-apply:
