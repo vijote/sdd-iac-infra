@@ -3,7 +3,6 @@ name: "Terraform Apply"
 on:
   push:
     branches: [main]
-    paths: ["src/terraform/**"]
   workflow_dispatch:
     inputs:
       environment:
