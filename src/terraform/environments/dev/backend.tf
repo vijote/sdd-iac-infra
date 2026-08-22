@@ -4,10 +4,7 @@ terraform {
     key            = "dev/terraform.tfstate"
     region         = "us-east-1"
     encrypt        = true
-    dynamodb_table = "terraform-locks-dev" # Will be updated after lock table creation
-    
-    # Locking configuration
-    lock_table = "terraform-locks-dev"
+    use_lockfile   = true
     
     # State file settings
     acl = "bucket-owner-full-control"
