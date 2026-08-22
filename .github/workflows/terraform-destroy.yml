@@ -24,6 +24,7 @@ env:
   AWS_REGION: us-east-1
   AWS_BOOTSTRAP_ROLE: ${{ vars.AWS_BOOTSTRAP_ROLE }}
   AWS_TERRAFORM_ROLE: ${{ vars.AWS_TERRAFORM_ROLE }}
+  STATE_BUCKET_NAME: ${{ vars.STATE_BUCKET_NAME }}
 
 jobs:
   terraform-destroy:
@@ -65,7 +66,7 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: terraform init -input=false
+        run: terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}"
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
 
       - name: Terraform Validate
