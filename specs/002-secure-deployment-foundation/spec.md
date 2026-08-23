@@ -38,7 +38,7 @@ As a security administrator, I need least-privilege IAM roles for Terraform oper
 
 1. **Given** an IAM role configured for Terraform, **When** Terraform attempts to create allowed resources, **Then** the operation should succeed
 2. **Given** an IAM role with limited permissions, **When** Terraform attempts to create unauthorized resources, **Then** the operation should fail with an access denied error
-3. **Given** multiple environments (dev/staging/prod), **When** deploying to each environment, **Then** each should use appropriately scoped IAM roles
+3. **Given** multiple environments (dev/prod), **When** deploying to each environment, **Then** each should use appropriately scoped IAM roles
 
 ---
 
@@ -72,7 +72,7 @@ As a platform engineer, I need remote Terraform state with locking so that team 
 - **FR-001**: System MUST support GitHub Actions OIDC authentication to AWS without storing static credentials
 - **FR-002**: System MUST provide least-privilege IAM roles scoped to specific Terraform operations
 - **FR-003**: System MUST support remote Terraform state storage with locking mechanism
-- **FR-004**: System MUST support multiple environment deployments (dev/staging/prod) with appropriate isolation
+- **FR-004**: System MUST support multiple environment deployments (dev/prod) with appropriate isolation
 - **FR-005**: System MUST log all deployment activities for audit purposes
 - **FR-006**: System MUST validate Terraform code before applying changes
 - **FR-007**: System MUST support manual approval steps for production deployments
@@ -122,7 +122,7 @@ As a platform engineer, I need remote Terraform state with locking so that team 
 - Team has basic familiarity with CI/CD concepts
 - Existing networking infrastructure (from Spec 001) is available for deployment
 - Organization has security policies requiring least-privilege access
-- Multiple deployment environments exist (development, staging, production)
+- Multiple deployment environments exist (development, production)
 - **Production deployments**: Must use OIDC authentication via GitHub Actions (no static credentials)
 - **Local development**: May use access keys with MiniStack as defined in Spec 001
 - **CI/CD systems**: GitHub Actions is the primary deployment mechanism

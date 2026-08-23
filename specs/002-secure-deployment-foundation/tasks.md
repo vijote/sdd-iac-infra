@@ -127,7 +127,6 @@ description: "Task list for feature implementation"
 **Purpose**: Configure deployment environments with appropriate settings
 
 - [X] T036 Create dev environment configuration in src/terraform/environments/dev/
-- [X] T037 [P] Create staging environment configuration in src/terraform/environments/staging/
 - [X] T038 [P] Create prod environment configuration in src/terraform/environments/prod/
 - [X] T039 [P] Configure environment-specific provider settings
 - [X] T040 [P] Set up environment-specific terraform.tfvars files

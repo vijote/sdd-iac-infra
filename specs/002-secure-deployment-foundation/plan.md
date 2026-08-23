@@ -96,10 +96,6 @@ src/
 │       │   ├── backend.tf     # S3 backend config with native locking
 │       │   ├── terraform.tfvars
 │       │   └── provider.tf
-│       ├── staging/
-│       │   ├── backend.tf
-│       │   ├── terraform.tfvars
-│       │   └── provider.tf
 │       └── prod/
 │           ├── backend.tf
 │           ├── terraform.tfvars

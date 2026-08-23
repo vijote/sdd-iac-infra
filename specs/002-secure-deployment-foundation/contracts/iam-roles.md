@@ -11,7 +11,7 @@ All IAM roles MUST follow the naming pattern:
 terraform-{environment}-role
 ```
 
-Where `{environment}` is one of: `dev`, `staging`, `prod`
+Where `{environment}` is one of: `dev`, `prod`
 
 ### Terraform Data Source Integration
 
@@ -141,69 +141,6 @@ All roles MUST require session tagging:
 - Can only access development AWS account
 - Can only access specified regions
 - Full permissions for rapid iteration
-
-### Staging Role (terraform-staging-role)
-
-**Purpose**: Limited access to staging environment, read-only to production
-
-**Required Permissions**:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:Describe*",
-        "vpc:Describe*",
-        "s3:Get*",
-        "s3:List*",
-        "iam:Get*",
-        "iam:List*",
-        "dynamodb:Describe*",
-        "dynamodb:Get*",
-        "dynamodb:Query*",
-        "dynamodb:Scan*",
-        "cloudformation:Describe*",
-        "cloudformation:Get*",
-        "route53:Get*",
-        "route53:List*"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringEquals": {
-          "aws:RequestedRegion": ["us-east-1", "us-west-2"]
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:*",
-        "vpc:*",
-        "s3:*",
-        "iam:CreateServiceLinkedRole",
-        "dynamodb:*",
-        "cloudformation:*",
-        "route53:*"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringEquals": {
-          "aws:RequestedRegion": ["us-east-1", "us-west-2"],
-          "aws:RequestedRegion": ["us-east-1", "us-west-2"]
-        }
-      }
-    }
-  ]
-}
-```
-
-**Constraints**:
-- Can modify staging resources
-- Read-only access to production
-- Requires approval for destructive changes
 
 ### Production Role (terraform-prod-role)
 
