@@ -14,9 +14,9 @@ This implementation plan creates a secure CI/CD foundation for Terraform deploym
 
 **Language/Version**: YAML (GitHub Actions), HCL (Terraform), JSON (IAM policies)
 
-**Primary Dependencies**: GitHub Actions (OIDC), AWS IAM, Terraform Cloud/CLI, S3, DynamoDB, MiniStack (local AWS emulation for development)
+**Primary Dependencies**: GitHub Actions (OIDC), AWS IAM, Terraform Cloud/CLI, S3, MiniStack (local AWS emulation for development)
 
-**Storage**: S3 for Terraform state, DynamoDB for state locking, GitHub repository for code
+**Storage**: S3 for Terraform state with native S3 locking, GitHub repository for code
 
 **Testing**: GitHub Actions workflow testing, Terraform validate/plan, IAM policy simulation
 
@@ -42,7 +42,7 @@ This implementation plan creates a secure CI/CD foundation for Terraform deploym
 
 **✅ III. Declarative Over Imperative** - Workflows declare desired deployment state, not step-by-step procedures
 
-**✅ IV. Minimal, Learnable, Cost-Optimized** - Uses GitHub Actions (free tier), S3/DynamoDB (minimal cost), no complex tooling
+**✅ IV. Minimal, Learnable, Cost-Optimized** - Uses GitHub Actions (free tier), S3 (minimal cost), no complex tooling
 
 **✅ V. Kubernetes as a Platform, Not a Target** - This is deployment automation only, clear separation from applications
 

@@ -97,23 +97,6 @@ resource "aws_iam_role_policy" "terraform_permissions" {
       {
         Effect = "Allow"
         Action = [
-          "dynamodb:CreateTable",
-          "dynamodb:DeleteTable",
-          "dynamodb:DescribeTable",
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:DeleteItem",
-          "dynamodb:Query",
-          "dynamodb:Scan",
-          "dynamodb:UpdateItem"
-        ]
-        Resource = [
-          "arn:aws:dynamodb:${var.aws_region}:${var.aws_account_id}:table:terraform-locks-${var.environment}"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"

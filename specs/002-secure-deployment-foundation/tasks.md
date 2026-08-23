@@ -45,7 +45,7 @@ description: "Task list for feature implementation"
 
 - [X] T004 Create OIDC provider configuration in AWS (using AWS_ACCOUNT_ID variable from repository secrets)
 - [X] T005 [P] Setup S3 bucket for Terraform state with versioning and encryption
-- [X] T006 [P] Setup DynamoDB table for state locking
+- [X] T006 [P] Configure native S3 locking for state management
 - [X] T007 Create base IAM role trust policy template
 - [X] T008 Configure environment-specific backend configurations
 - [X] T009 Setup repository secrets configuration guide

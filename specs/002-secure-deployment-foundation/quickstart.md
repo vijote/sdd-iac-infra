@@ -95,7 +95,7 @@ aws iam put-role-policy \
     "Statement": [
       {
         "Effect": "Allow",
-        "Action": ["ec2:*", "vpc:*", "s3:*", "iam:*", "dynamodb:*"],
+        "Action": ["ec2:*", "vpc:*", "s3:*", "iam:*"],
         "Resource": "*"
       }
     ]
@@ -147,24 +147,12 @@ aws s3api put-bucket-encryption \
   }'
 ```
 
-4. Create DynamoDB table for locking:
-```bash
-aws dynamodb create-table \
-  --table-name terraform-locks \
-  --attribute-definitions AttributeName=LockID,AttributeType=S \
-  --key-schema AttributeName=LockID,KeyType=HASH \
-  --billing-mode PAY_PER_REQUEST \
-  --region us-east-1
-```
-
 **Expected Outcome**:
 - S3 bucket created with versioning and encryption
-- DynamoDB table created for state locking
 
 **Validation Command**:
 ```bash
 aws s3api get-bucket-versioning --bucket terraform-state-$(aws sts get-caller-identity --query Account --output text)
-aws dynamodb describe-table --table-name terraform-locks
 ```
 
 ## Deployment Validation Scenarios

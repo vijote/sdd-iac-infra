@@ -58,12 +58,12 @@
 - `key`: State file path
 - `region`: AWS region
 - `encrypt`: Encryption flag (always true)
-- `dynamodb_table`: Lock table name
+- `use_lockfile`: Native S3 locking flag (always true)
 
 **Validation Rules**:
 - Bucket must have versioning enabled
 - Bucket must have encryption enabled
-- DynamoDB table must have primary key "LockID"
+- S3 locking must be enabled
 
 ### Environment Configuration
 
@@ -193,7 +193,7 @@ jobs:
 
 ### State Configuration Validation
 - Must use encrypted S3 bucket
-- Must have DynamoDB locking enabled
+- Must have native S3 locking enabled
 - Must have versioning enabled
 
 ### Environment Validation

@@ -80,15 +80,13 @@
 **Rationale**:
 - GitHub Actions: 2000 minutes/month free tier
 - S3: First 5GB storage free, then $0.023/GB
-- DynamoDB: 25WCUs free, then $0.00013 per request
 - Well within $50/month budget
 
 **Estimated Monthly Costs**:
 - GitHub Actions: $0 (within free tier)
 - S3 State Storage: ~$0.05 (100MB)
-- DynamoDB Locking: ~$0.10 (light usage)
 - Data Transfer: ~$0.50
-- **Total**: ~$0.65/month
+- **Total**: ~$0.55/month
 
 ## Security Considerations
 
@@ -143,7 +141,7 @@
 ### Order of Operations
 1. Create OIDC provider in AWS
 2. Create IAM roles with trust relationships
-3. Configure S3 bucket and DynamoDB table
+3. Configure S3 bucket with native locking
 4. Set up GitHub repository secrets (if needed)
 5. Create and test workflows
 6. Validate end-to-end deployment
@@ -152,7 +150,7 @@
 
 ### Identified Risks
 1. **OIDC Misconfiguration**: Mitigated by thorough testing
-2. **State Corruption**: Mitigated by DynamoDB locking
+2. **State Corruption**: Mitigated by native S3 locking
 3. **Permission Escalation**: Mitigated by least-privilege roles
 4. **Cost Overrun**: Mitigated by monitoring and alerts
 
