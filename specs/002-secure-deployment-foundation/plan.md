@@ -20,7 +20,7 @@ This implementation plan creates a secure CI/CD foundation for Terraform deploym
 
 **Testing**: GitHub Actions workflow testing, Terraform validate/plan, IAM policy simulation
 
-**Target Platform**: GitHub (CI/CD), AWS (infrastructure), Multi-environment (dev/staging/prod)
+**Target Platform**: GitHub (CI/CD), AWS (infrastructure), Multi-environment (dev/prod)
 
 **Project Type**: Infrastructure as Code (IaC) automation and security foundation
 

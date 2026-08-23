@@ -354,7 +354,7 @@ All validation scenarios should pass:
 ## Next Steps
 
 After successful validation:
-1. Configure additional environments (staging, prod)
+1. Configure additional environments (prod)
 2. Set up monitoring and alerting
 3. Document team onboarding process
 4. Establish incident response procedures

@@ -55,7 +55,6 @@
 
 **Role Structure**:
 - `terraform-dev-role`: Full access to dev resources
-- `terraform-staging-role`: Limited access to staging resources
 - `terraform-prod-role`: Highly restricted access to production
 
 ## GitHub Actions Workflow Strategy

@@ -97,7 +97,7 @@ As a platform engineer, I need remote Terraform state with locking so that team 
 
 ## Authentication Scope & Boundaries
 
-### Production Environments (Staging & Production)
+### Production Environments (Production)
 - **Required**: GitHub Actions OIDC authentication to AWS
 - **Prohibited**: Static AWS access keys or secret keys
 - **Implementation**: IAM roles with trust relationships to GitHub's OIDC provider

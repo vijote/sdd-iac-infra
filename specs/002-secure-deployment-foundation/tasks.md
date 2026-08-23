@@ -86,7 +86,6 @@ description: "Task list for feature implementation"
 
 - [X] T019 [US2] Create IAM module structure in src/terraform/modules/iam/
 - [X] T020 [US2] [P] Create terraform-dev-role in src/terraform/modules/iam/main.tf
-- [X] T021 [US2] [P] Create terraform-staging-role in src/terraform/modules/iam/main.tf
 - [X] T022 [US2] [P] Create terraform-prod-role in src/terraform/modules/iam/main.tf
 - [X] T023 [US2] Implement least-privilege policies for each role
 - [X] T024 [US2] Add session tagging and audit logging configuration

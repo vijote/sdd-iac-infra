@@ -23,7 +23,6 @@ on:
         type: choice
         options:
           - dev
-          - staging
           - prod
 ```
 

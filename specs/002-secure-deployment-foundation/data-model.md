@@ -68,7 +68,7 @@
 ### Environment Configuration
 
 **Attributes**:
-- `name`: Environment name (dev, staging, prod)
+- `name`: Environment name (dev, prod)
 - `aws_account_id`: Target AWS account
 - `aws_region`: Target AWS region
 - `terraform_backend`: Backend configuration
@@ -126,11 +126,10 @@ State Backup (if applicable)
 
 ### Access Control Matrix
 
-| Entity | Dev | Staging | Prod |
-|--------|-----|---------|------|
-| terraform-dev-role | Full | Read | None |
-| terraform-staging-role | Read | Full | Read |
-| terraform-prod-role | None | Read | Full |
+| Entity | Dev | Prod |
+|--------|-----|------|
+| terraform-dev-role | Full | None |
+| terraform-prod-role | None | Full |
 
 ## Configuration Schema
 
