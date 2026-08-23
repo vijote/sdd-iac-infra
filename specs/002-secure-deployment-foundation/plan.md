@@ -87,13 +87,13 @@ src/
 │   │   │   ├── variables.tf
 │   │   │   ├── outputs.tf
 │   │   │   └── versions.tf
-│   │   └── state/             # Remote state configuration
+│   │   └── state/             # Remote state configuration (references manually provisioned S3 bucket)
 │   │       ├── main.tf
 │   │       ├── variables.tf
 │   │       └── outputs.tf
 │   └── environments/
 │       ├── dev/
-│       │   ├── backend.tf     # S3 + DynamoDB backend config
+│       │   ├── backend.tf     # S3 backend config with native locking
 │       │   ├── terraform.tfvars
 │       │   └── provider.tf
 │       ├── staging/

@@ -11,8 +11,10 @@
 - AWS CLI configured for initial setup
 
 ### Required Permissions
-- AWS: Ability to create IAM roles, OIDC providers, S3 buckets, DynamoDB tables
+- AWS: Ability to create IAM roles, OIDC providers, S3 buckets
 - GitHub: Repository admin permissions for workflows and secrets
+
+**Note**: This implementation uses manually provisioned S3 bucket with native S3 locking (no DynamoDB table required)
 
 ## Setup Validation Scenarios
 

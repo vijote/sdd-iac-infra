@@ -20,16 +20,25 @@
 
 ## Terraform State Backend Options
 
-### Decision: Use S3 + DynamoDB
+### Decision: Use S3 with Native Locking (Manual Bucket Provisioning)
 
 **Rationale**:
 - S3 provides durable, scalable storage for state files
-- DynamoDB provides state locking to prevent corruption
+- Native S3 locking (Terraform 1.1+) eliminates need for DynamoDB
+- Manual bucket provisioning simplifies bootstrap process
+- Reduced operational complexity and cost (no DynamoDB table)
 - Native AWS integration with IAM roles
-- Cost-effective for our scale ($50/month budget)
-- Well-documented and widely adopted
+
+**Trade-offs Considered**:
+- **S3 Native Locking Pros**: Simpler architecture, lower cost, fewer resources to manage
+- **S3 Native Locking Cons**: Newer feature (less battle-tested than DynamoDB), requires Terraform 1.1+
+- **DynamoDB Pros**: Battle-tested, more granular locking control
+- **DynamoDB Cons**: Additional resource to manage, higher cost, more complexity
+
+**Final Decision**: Native S3 locking chosen for simplicity and cost-effectiveness, sufficient for our team scale and deployment patterns.
 
 **Alternatives Considered**:
+- S3 + DynamoDB (rejected due to complexity)
 - Terraform Cloud (rejected due to cost)
 - Azure Blob Storage (rejected - not in AWS ecosystem)
 - Local state (rejected - not suitable for team collaboration)
