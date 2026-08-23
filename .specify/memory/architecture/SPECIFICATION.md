@@ -57,7 +57,7 @@ This project provisions a **self-managed Kubernetes cluster on AWS EC2** to serv
 
 #### CI/CD
 - Terraform plan/apply pipeline on Git merge
-- Infrastructure validation and deployment automation
+- Infrastructure deployment automation
 
 ### Out of Scope
 
@@ -65,7 +65,7 @@ This project provisions a **self-managed Kubernetes cluster on AWS EC2** to serv
 - **RBAC (Role-Based Access Control):** Basic Kubernetes RBAC only. Production RBAC policies deferred.
 - **Application Deployment:** Apps are deployed from their own repositories using separate tools (sdd). This repo provides the cluster only.
 - **Monitoring & Alerting:** No cluster monitoring beyond basic health checks.
-- **Disaster Recovery & Backup:** etcd backups and cluster restoration not covered in MVP.
+- **Disaster Recovery & Backup:** etcd backups and cluster restoration not covered.
 
 ---
 
@@ -153,7 +153,7 @@ This project provisions a **self-managed Kubernetes cluster on AWS EC2** to serv
 ### Non-Functional Requirements
 
 #### Performance
-- **NFR1:** Cluster boots and is ready to accept deployments within 10 minutes of `terraform apply`.
+- **NFR1:** Cluster boots and is ready to accept deployments within reasonable time after `terraform apply`.
 - **NFR2:** Pod-to-pod latency: <10ms (within same region).
 - **NFR3:** Service DNS resolution: <100ms.
 - **NFR4:** No hard throughput requirements (learning project); minimal apps suffice.
@@ -261,7 +261,7 @@ terraform/
    # Sit back; cluster boots in ~8 minutes
    ```
 
-4. **Verify**
+4. **Manual Verification**
    ```bash
    # Wait for all nodes to be Ready
    kubectl get nodes
@@ -273,33 +273,6 @@ terraform/
 
 5. **Deploy Apps**
    - Apps deployed from their own repos (sdd); outside this repo's scope.
-
----
-
-## Success Criteria
-
-### Provisioning
-- ✅ `terraform apply` completes without errors.
-- ✅ All EC2 instances launch and pass status checks.
-- ✅ Control plane kubeadm init succeeds.
-- ✅ All worker nodes join the cluster.
-
-### Cluster Health
-- ✅ `kubectl get nodes` shows 1 control plane + 2 workers in `Ready` state.
-- ✅ All kube-system pods are running (CoreDNS, Flannel, kube-proxy, etc.).
-- ✅ Pod-to-pod connectivity verified (e.g., `kubectl run -it --rm debug --image=busybox -- sh` and ping another pod).
-
-### Networking & Ingress
-- ✅ Route53 entry resolves to the load balancer IP.
-- ✅ nginx-ingress is deployed and running.
-- ✅ HTTP requests to `/` and `/api` reach the intended services (verified via curl).
-
-### Secrets & IAM
-- ✅ Secrets are provisioned in AWS Secrets Manager.
-- ✅ Pods can assume IAM roles via IRSA and retrieve secrets.
-
-### Cost Validation
-- ✅ AWS billing shows <$50/month estimated cost.
 
 ---
 
@@ -324,25 +297,11 @@ terraform/
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|-----------|
 | Control plane failure (single node) | Medium | Critical | Cluster becomes unavailable. Acceptable for learning; not for production. |
-| t3.micro resource exhaustion | Medium | High | Monitor resource usage; upgrade to t3.small if needed. Pre-test with load. |
+| t3.micro resource exhaustion | Medium | High | Monitor resource usage; upgrade to t3.small if needed. |
 | kubeadm bootstrap timeout | Low | High | Timeout handled by Terraform; retry logic in cloud-init. |
 | Network partition (node leaves cluster) | Low | Medium | Flannel recovers; nodes rejoin. Pods may be rescheduled. |
 | Secret rotation (Secrets Manager) | Low | Low | Apps handle secret refresh logic. Terraform manages initial provisioning. |
-| Cost overruns | Low | Medium | Monitor AWS billing; scale down instances if needed. No auto-scaling configured. |
-
----
-
-## Timeline & Phases
-
-| Phase | Duration | Deliverables |
-|-------|----------|--------------|
-| **Phase 1: Foundation** | Week 1-2 | Terraform scaffolding, VPC, EC2 instances |
-| **Phase 2: Kubernetes** | Week 2-3 | kubeadm bootstrap, Flannel, CoreDNS, kube-proxy |
-| **Phase 3: Networking** | Week 3-4 | nginx-ingress, Route53 integration, load balancer |
-| **Phase 4: Secrets & Security** | Week 4-5 | AWS Secrets Manager, IRSA, IAM policies |
-| **Phase 5: Testing & Validation** | Week 5-6 | End-to-end testing, documentation, performance tuning |
-| **Phase 6: CI/CD & Handoff** | Week 6-7 | Terraform pipeline, runbook, team training |
-| **Buffer** | Week 7-8 | Contingency for issues, improvements, refinement |
+| Cost overruns | Low | Medium | Monitor AWS billing; scale down instances if needed. |
 
 ---
 
@@ -375,7 +334,7 @@ The following are explicitly **NOT** part of this project:
 
 ## Appendix: Decision Log Reference
 
-For detailed rationale on major decisions (CNI choice, kubeadm approach, instance sizing, etc.), see `.coda/docs/DECISION_LOG.md`.
+For detailed rationale on major decisions (CNI choice, kubeadm approach, instance sizing, etc.), see `.specify/memory/decisions/DECISION_LOG.md`.
 
 ---
 

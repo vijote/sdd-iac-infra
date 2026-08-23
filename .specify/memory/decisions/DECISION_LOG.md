@@ -3,10 +3,8 @@
 ## Project Overview
 - **Type:** Learning project (internal)
 - **Goal:** Understand Kubernetes internals and control costs
-- **Duration:** 2 months
 - **Infrastructure:** Self-managed K8s on AWS EC2 (1 control plane + 2 workers)
 - **Apps:** 3 minimal demo apps (frontend, backend, database) in separate repos
-- **Success Criteria:** Infrastructure provisioning runs, cluster is up and healthy
 
 ---
 
@@ -100,7 +98,7 @@
 - **t3.medium (2 vCPU, 4 GB RAM):** Standard — Pros: comfortable, reliable. Cons: higher cost (~2x micro).
 
 **Decision:** t3.micro for workers; t3.small for control plane  
-**Rationale:** Cost is primary goal. Control plane needs slightly more resources (etcd, API server); workers can be minimal. t3.micro is borderline; testing needed.  
+**Rationale:** Cost is primary goal. Control plane needs slightly more resources (etcd, API server); workers can be minimal. t3.micro is borderline; may need adjustment based on actual usage.  
 **Implications:** Cluster may be slow or hit resource limits under load. Acceptable for demo/learning. May need to scale up if performance issues arise.  
 **Alternatives Rejected:** t3.medium exceeds cost goals. All t3.small is safer but higher cost.
 
@@ -115,15 +113,11 @@
 - **RBAC:** Out of scope. (Basic Kubernetes RBAC will be minimal; production RBAC policies deferred.)
 - **App Deployment:** Out of scope. (Apps deployed from their own repos via sdd, not this repo.)
 
-**Rationale:** Learning project needs clear boundaries. These are significant topics on their own and would expand the 2-month timeline significantly.  
+**Rationale:** Learning project needs clear boundaries. These are significant topics on their own and would expand scope significantly.  
 **Implications:** This repo is cluster provisioning only. Apps assume a running, healthy cluster but handle their own deployment.
 
 ---
 
-## Next Steps
-1. **Validate decisions with team** (if applicable)
-2. **Prototype instance sizing** (test t3.micro/small performance under load)
-3. **Begin Terraform scaffolding** (VPC, subnets, security groups, EC2 instances)
-4. **Implement kubeadm bootstrap** (cloud-init scripts)
-5. **Set up nginx-ingress + Route53** (after cluster boots)
-6. **Document deployment procedure** (how to run terraform plan/apply)
+**Document Created:** 2026-08-20  
+**Status:** Active  
+**Total Decisions:** 7 (D001-D007)
