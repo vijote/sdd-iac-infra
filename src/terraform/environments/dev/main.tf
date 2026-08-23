@@ -67,11 +67,6 @@ output "ingress_security_group_id" {
   value       = module.networking.ingress_security_group_id
 }
 
-output "terraform_role_arn" {
-  description = "Terraform dev role ARN"
-  value       = module.iam.terraform_role_arn
-}
-
 output "state_bucket_name" {
   description = "S3 bucket name for Terraform state"
   value       = module.state.state_bucket_name
