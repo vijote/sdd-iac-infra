@@ -1,9 +1,10 @@
 
 
-# Environment-specific least-privilege policies
-resource "aws_iam_role_policy" "terraform_permissions" {
-  name = "terraform-permissions"
-  role = var.aws_terraform_role_name
+# Development environment - full permissions for rapid iteration
+resource "aws_iam_role_policy" "terraform_dev_permissions" {
+  count = var.environment == "dev" ? 1 : 0
+  name  = "terraform-permissions-dev"
+  role  = var.aws_terraform_role_name
   
   policy = jsonencode({
     Version = "2012-10-17"
@@ -93,17 +94,68 @@ resource "aws_iam_role_policy" "terraform_permissions" {
           "arn:aws:s3:::${var.aws_state_bucket_name}*",
           "arn:aws:s3:::${var.aws_state_bucket_name}*/*"
         ]
+      }
+    ]
+  })
+}
+
+# Production environment - read-only permissions for safety
+resource "aws_iam_role_policy" "terraform_prod_permissions" {
+  count = var.environment == "prod" ? 1 : 0
+  name  = "terraform-permissions-prod"
+  role  = var.aws_terraform_role_name
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeVpcs",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeRouteTables",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeInternetGateways",
+          "ec2:DescribeNatGateways",
+          "ec2:DescribeNetworkAcls",
+          "ec2:DescribeVpcEndpoints",
+          "ec2:CreateTags",
+          "ec2:DeleteTags"
+        ]
+        Resource = "*"
       },
       {
         Effect = "Allow"
         Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
+          "iam:GetRole",
+          "iam:ListRoles",
+          "iam:GetPolicy",
+          "iam:ListPolicies",
+          "iam:ListAttachedRolePolicies",
+          "iam:GetRolePolicy",
+          "iam:ListRolePolicies"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion" = var.aws_region
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetBucket",
+          "s3:ListBucket",
+          "s3:GetBucketVersioning",
+          "s3:GetBucketEncryption",
+          "s3:GetBucketPublicAccessBlock",
+          "s3:GetObject",
+          "s3:ListBucketVersions"
         ]
         Resource = [
-          "arn:aws:logs:${var.aws_region}:${var.aws_account_id}:log-group:/aws/lambda/terraform-*",
-          "arn:aws:logs:${var.aws_region}:${var.aws_account_id}:log-group:/aws/lambda/terraform-*:*"
+          "arn:aws:s3:::${var.aws_state_bucket_name}*",
+          "arn:aws:s3:::${var.aws_state_bucket_name}*/*"
         ]
       }
     ]
