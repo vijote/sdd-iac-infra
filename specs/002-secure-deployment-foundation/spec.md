@@ -75,8 +75,7 @@ As a platform engineer, I need remote Terraform state with locking so that team 
 - **FR-004**: System MUST support multiple environment deployments (dev/prod) with appropriate isolation
 - **FR-005**: System MUST log all deployment activities for audit purposes
 - **FR-006**: System MUST validate Terraform code before applying changes
-- **FR-007**: System MUST support manual approval steps for production deployments
-- **FR-008**: System MUST handle authentication failures gracefully with clear error messages
+- **FR-007**: System MUST handle authentication failures gracefully with clear error messages
 
 ### Key Entities *(include if feature involves data)*
 

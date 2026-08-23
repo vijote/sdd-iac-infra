@@ -86,9 +86,8 @@
 1. **Triggered** → Workflow started by event
 2. **Authenticating** → OIDC token exchange
 3. **Planning** → Terraform plan execution
-4. **Approval** → Manual approval (if required)
-5. **Applying** → Terraform apply execution
-6. **Completed** → Deployment finished
+4. **Applying** → Terraform apply execution
+5. **Completed** → Deployment finished
 
 ### IAM Role Session States
 

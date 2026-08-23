@@ -66,7 +66,6 @@
 - Clear separation of concerns
 - Plan runs on PR for visibility
 - Apply runs on merge for deployment
-- Supports manual approval for production
 - Prevents accidental deployments
 
 **Workflow Structure**:
@@ -104,8 +103,7 @@
 
 **Least Privilege Approach**:
 - Dev environment: Full access to VPC, EC2, S3 in dev account
-- Staging: Read-only on production, full on staging
-- Production: Require manual approval, minimal permissions
+- Production: Minimal permissions for production changes
 
 ### Audit and Logging
 

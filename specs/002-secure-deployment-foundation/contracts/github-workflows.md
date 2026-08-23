@@ -25,11 +25,6 @@ on:
           - dev
           - staging
           - prod
-      force_apply:
-        description: 'Force apply without approval'
-        required: false
-        default: false
-        type: boolean
 ```
 
 ### Required Permissions

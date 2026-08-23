@@ -70,7 +70,6 @@ description: "Task list for feature implementation"
 - [X] T015 [US1] Configure workflow permissions and environment variables
 - [X] T016 [US1] Add error handling and notification logic to workflows
 - [X] T017 [US1] Implement PR commenting for plan results
-- [X] T018 [US1] Add manual approval for production deployments
 - [X] T018a [US1] Add Terraform validation step (fmt, validate, plan review) in CI/CD pipeline
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
@@ -229,6 +228,5 @@ T036 → T037 → T038 → T039 → T040 → T041
 ### Risk Mitigation
 
 - Start with dev environment only to reduce risk
-- Implement manual approval gates for production
 - Create rollback procedures before first production deployment
 - Monitor costs closely to stay within $50/month budget

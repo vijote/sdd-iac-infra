@@ -205,7 +205,6 @@ All roles MUST require session tagging:
 **Constraints**:
 - Read-only by default
 - Can only modify tags
-- Requires manual approval for any changes
 - All actions logged and monitored
 
 ## Role Validation Contract
