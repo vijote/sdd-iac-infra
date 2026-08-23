@@ -202,8 +202,7 @@ terraform/
 ├── networking.tf        # Route53, load balancer
 ├── secrets.tf           # AWS Secrets Manager
 ├── variables.tf         # Input variables (instance size, region, etc.)
-├── outputs.tf           # Cluster endpoints, kubeconfig, etc.
-└── terraform.tfvars     # Environment-specific values
+└── outputs.tf           # Cluster endpoints, kubeconfig, etc.
 ```
 
 ### 2. kubeadm & Cloud-Init
@@ -247,7 +246,6 @@ terraform/
    ```bash
    git clone <repo>
    cd terraform
-   # Edit terraform.tfvars for your AWS region, instance types, etc.
    ```
 
 2. **Validate & Plan**

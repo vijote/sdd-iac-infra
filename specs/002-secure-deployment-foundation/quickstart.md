@@ -14,7 +14,7 @@
 - AWS: Ability to create IAM roles, OIDC providers, S3 buckets
 - GitHub: Repository admin permissions for workflows and secrets
 
-**Note**: This implementation uses manually provisioned S3 bucket with native S3 locking (no DynamoDB table required)
+**Note**: This implementation uses manually provisioned S3 bucket with native S3 locking
 
 ## Setup Validation Scenarios
 
@@ -331,8 +331,7 @@ gh run list --repo $(git config --get remote.origin.url)
    - Validate AWS region constraints
 
 3. **State Lock Issues**
-   - Check DynamoDB table exists
-   - Verify IAM permissions for DynamoDB
+   - Check State Bucket has locking
    - Manually release stuck locks if needed
 
 4. **Workflow Permissions**
