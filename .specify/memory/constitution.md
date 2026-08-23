@@ -1,3 +1,12 @@
+<!--
+Sync Impact Report:
+- Version change: 1.0.0 → 2.0.0 (major amendment - removal of testing/validation requirements)
+- Modified principles: Removed testing & validation constraints, removed quality gates
+- Removed sections: Testing & Validation, Quality Gates
+- Added sections: Manual Validation Philosophy
+- Rationale: User wants manual AWS validation only, no upfront testing requirements
+-->
+
 # SDD-Infra Constitution
 
 ## Core Principles
@@ -17,13 +26,10 @@ This is a learning project with tight budget constraints. Complexity is justifie
 ### V. Kubernetes as a Platform, Not a Target
 Kubernetes is the container orchestration platform. This repo provisions the cluster and foundational infrastructure; applications are deployed separately from their own repos. Clear separation of concerns between cluster and apps.
 
-### VI. Observability Through Simplicity
-No complex monitoring stacks yet. Cluster health is basic: nodes Ready, pods Running. AWS CloudWatch for cost tracking. Logging is per-app responsibility. Observability is future work, documented as out-of-scope.
-
-### VII. Security Defaults, Not Afterthought
+### VI. Security Defaults, Not Afterthought
 IAM roles are least-privilege. Secrets are never in code; AWS Secrets Manager is mandatory. Inter-node communication is encrypted (Flannel VXLAN). VPC security groups restrict traffic. RBAC is minimal but foundational. Security reviews required for any changes.
 
-### VIII. Documentation is Executable Proof
+### VII. Documentation is Executable Proof
 Every infrastructure decision is documented in the Decision Log. Every deployment step is in code (cloud-init, Terraform provisioners). Runbooks exist before incidents happen. The Specification is the contract; Terraform is the implementation.
 
 ---
@@ -32,7 +38,6 @@ Every infrastructure decision is documented in the Decision Log. Every deploymen
 
 ### Scope Management
 - **No creeping features.** In/out-of-scope is locked in the Specification. Changes require decision log amendment and team agreement.
-- **Two-month timeline.** Prioritize ruthlessly. Future work is documented but not pursued.
 - **Cost ceiling: $50/month.** Any change that breaches this budget is flagged and requires justification.
 
 ### Code Quality Standards
@@ -42,17 +47,20 @@ Every infrastructure decision is documented in the Decision Log. Every deploymen
 - **State management:** Terraform state is backed up; remote state (S3) is optional but recommended.
 - **Readability first:** Code is self-documenting; comments explain *why*, not *what*.
 
-### Testing & Validation
-- **Pre-deployment checks:**
-  - `terraform plan` is reviewed; output is stored in PR.
-  - Security group rules are verified for least-privilege.
-  - IAM policies are validated for intended scope.
-- **Post-deployment verification:**
-  - All nodes reach Ready state.
-  - Pod-to-pod connectivity is tested.
-  - Ingress routing works as documented.
-  - Secrets are retrievable by pods.
-- **Cost validation:** Estimated monthly cost is logged and compared against budget.
+---
+
+## Manual Validation Philosophy
+
+### AWS-First Validation
+- **Infrastructure is validated on AWS directly.** No pre-deployment testing or validation gates.
+- **If something breaks, requirements emerge.** New requirements are brought forward only when failures occur.
+- **No upfront success criteria.** Success is determined by infrastructure functioning as needed in practice.
+- **Manual verification is sufficient.** AWS console and manual checks are the validation method.
+
+### Issue-Driven Requirements
+- **Requirements emerge from failures.** When something breaks on AWS, that becomes a new requirement.
+- **No speculative requirements.** We don't plan for hypothetical issues.
+- **Reactive, not proactive.** Fix what breaks, don't prevent what might break.
 
 ---
 
@@ -108,12 +116,12 @@ Any change to infrastructure scope or principle requires a new Decision Log entr
 
 ### Specification
 - **When:** Written once, after decisions are locked in.
-- **Format:** Follows the Specification template; includes architecture, requirements, success criteria.
+- **Format:** Follows the Specification template; includes architecture, requirements.
 - **Audience:** Stakeholders, team, external reviewers.
 - **Review:** Formally reviewed and signed off before implementation.
 
 ### Runbooks
-- **How to deploy:** Step-by-step Terraform commands and validation steps.
+- **How to deploy:** Step-by-step Terraform commands.
 - **How to debug:** Common failures, diagnostic steps, recovery procedures.
 - **How to scale:** Manual steps to add/remove nodes; future auto-scaling is out of scope.
 - **How to rotate secrets:** Process for updating AWS Secrets Manager without downtime.
@@ -122,29 +130,6 @@ Any change to infrastructure scope or principle requires a new Decision Log entr
 - **Why, not what:** Comments explain design decisions, not obvious code.
 - **Edge cases:** Comments highlight non-obvious behavior and gotchas.
 - **Links:** Comments reference Decision Log entries (e.g., "See D001: Pod Networking Choice").
-
----
-
-## Quality Gates
-
-### Pre-Merge
-- [ ] Terraform code passes `terraform fmt` and `terraform validate`.
-- [ ] `terraform plan` output is reviewed and saved in PR.
-- [ ] All new Decision Log entries (if any) are documented.
-- [ ] Peer code review approval required.
-
-### Pre-Deployment
-- [ ] `terraform plan` is approved.
-- [ ] Cost estimate is verified against budget.
-- [ ] Rollback plan is documented.
-- [ ] Team is notified of the deployment window.
-
-### Post-Deployment
-- [ ] All EC2 instances pass status checks.
-- [ ] All K8s nodes are in Ready state.
-- [ ] Pod-to-pod connectivity is verified.
-- [ ] Ingress routing works (manual curl test or health check).
-- [ ] Secrets are retrievable by test pod.
 
 ---
 
@@ -157,6 +142,7 @@ Any change to infrastructure scope or principle requires a new Decision Log entr
 - **Disaster Recovery:** No etcd backup/restore procedures.
 - **Logging & Monitoring:** Deferred to Phase 2.
 - **Advanced Networking:** Network policies, service mesh, etc.
+- **Automated Testing:** Manual validation only.
 
 ### Acceptable Workarounds
 - **Control plane failure:** Cluster is lost; re-provision from code. Acceptable for learning; not for production.
@@ -180,4 +166,4 @@ If two principles conflict, the earlier-numbered principle takes precedence. If 
 
 ---
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-20 | **Last Amended**: 2026-08-20
+**Version**: 2.0.0 | **Ratified**: 2026-08-20 | **Last Amended**: 2026-08-23
