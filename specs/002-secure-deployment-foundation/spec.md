@@ -91,9 +91,8 @@ As a platform engineer, I need remote Terraform state with locking so that team 
 - **SC-001**: DevOps engineers can deploy infrastructure changes without managing any AWS credentials
 - **SC-002**: All Terraform operations use IAM roles with permissions limited to required resources only
 - **SC-003**: Team members can run concurrent deployments without state corruption incidents
-- **SC-004**: Deployment time from code merge to infrastructure update is under 10 minutes
-- **SC-005**: Security audit shows zero static AWS credentials stored in CI/CD systems
-- **SC-006**: 99% of deployments complete without manual intervention (baseline: current manual deployments have ~70% success rate)
+- **SC-004**: Security audit shows zero static AWS credentials stored in CI/CD systems
+- **SC-005**: 99% of deployments complete without manual intervention (baseline: current manual deployments have ~70% success rate)
 
 ## Authentication Scope & Boundaries
 
@@ -102,7 +101,7 @@ As a platform engineer, I need remote Terraform state with locking so that team 
 - **Prohibited**: Static AWS access keys or secret keys
 - **Implementation**: IAM roles with trust relationships to GitHub's OIDC provider
 - **OIDC Provider**: Manually provisioned AWS IAM OIDC provider for GitHub
-- **IAM Roles**: Manually created bootstrap and Terraform execution roles
+- **IAM Roles**: Manually created bootstrap role (gha-bootstrap-role) and Terraform execution role (TerraformDeployRole)
 - **Reference**: This is the primary focus of Spec 002
 
 ### Local Development
@@ -125,7 +124,7 @@ As a platform engineer, I need remote Terraform state with locking so that team 
 - Organization has security policies requiring least-privilege access
 - Multiple deployment environments exist (development, production)
 - **OIDC Provider**: AWS IAM OIDC provider for GitHub is manually provisioned
-- **IAM Roles**: Bootstrap and Terraform execution roles are manually created
+- **IAM Roles**: Bootstrap role (gha-bootstrap-role) and Terraform execution role (TerraformDeployRole) are manually created
 - **Production deployments**: Must use OIDC authentication via GitHub Actions (no static credentials)
 - **Local development**: May use access keys with MiniStack as defined in Spec 001
 - **CI/CD systems**: GitHub Actions is the primary deployment mechanism

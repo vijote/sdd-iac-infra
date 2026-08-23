@@ -85,8 +85,8 @@ description: "Task list for feature implementation"
 ### Implementation for User Story 2
 
 - [X] T019 [US2] Create IAM module structure in src/terraform/modules/iam/
-- [X] T020 [US2] [P] Create terraform-dev-role in src/terraform/modules/iam/main.tf
-- [X] T022 [US2] [P] Create terraform-prod-role in src/terraform/modules/iam/main.tf
+- [X] T020 [US2] [P] Configure IAM module to use variable-based role references in src/terraform/modules/iam/main.tf
+- [X] T022 [US2] [P] Implement environment-specific IAM policies using count condition in src/terraform/modules/iam/main.tf
 - [X] T023 [US2] Implement least-privilege policies for each role
 - [X] T024 [US2] Add session tagging and audit logging configuration
 - [X] T025 [US2] Create IAM role variables in src/terraform/modules/iam/variables.tf
@@ -127,7 +127,7 @@ description: "Task list for feature implementation"
 - [X] T036 Create dev environment configuration in src/terraform/environments/dev/
 - [X] T038 [P] Create prod environment configuration in src/terraform/environments/prod/
 - [X] T039 [P] Configure environment-specific provider settings
-- [X] T040 [P] Set up environment-specific terraform.tfvars files
+- [X] T040 [P] Set up environment-specific main.tf configuration files
 - [X] T041 [P] Create environment README files with usage instructions
 
 ---

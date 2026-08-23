@@ -94,11 +94,11 @@ src/
 │   └── environments/
 │       ├── dev/
 │       │   ├── backend.tf     # S3 backend config with native locking
-│       │   ├── terraform.tfvars
+│       │   ├── main.tf        # Environment configuration
 │       │   └── provider.tf
 │       └── prod/
 │           ├── backend.tf
-│           ├── terraform.tfvars
+│           ├── main.tf        # Environment configuration
 │           └── provider.tf
 
 # Tests
