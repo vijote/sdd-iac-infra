@@ -25,7 +25,7 @@ env:
   AWS_TERRAFORM_ROLE: ${{ vars.AWS_TERRAFORM_ROLE }}
   STATE_BUCKET_NAME: ${{ vars.STATE_BUCKET_NAME }}
   TF_VAR_aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
-  TF_VAR_aws_terraform_role: ${{ vars.AWS_TERRAFORM_ROLE }}
+  TF_VAR_aws_terraform_role_name: ${{ vars.AWS_TERRAFORM_ROLE_NAME }}
   TF_VAR_aws_state_bucket_name: ${{ vars.STATE_BUCKET_NAME }}
 
 jobs:

@@ -24,8 +24,8 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "aws_terraform_role" {
-  description = "AWS Terraform Role"
+variable "aws_terraform_role_name" {
+  description = "AWS Terraform Role NAME"
   type        = string
   default     = "terraform-role"
 }

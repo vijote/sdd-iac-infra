@@ -27,7 +27,7 @@ variable "aws_state_bucket_name" {
   type        = string
 }
 
-variable "aws_terraform_role" {
+variable "aws_terraform_role_name" {
   description = "AWS Terraform Role"
   type        = string
 }

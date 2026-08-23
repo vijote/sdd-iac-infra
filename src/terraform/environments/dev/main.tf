@@ -24,7 +24,7 @@ module "iam" {
   aws_account_id        = var.aws_account_id
   aws_state_bucket_name = var.aws_state_bucket_name
   aws_region            = var.aws_region
-  aws_terraform_role    = var.aws_terraform_role
+  aws_terraform_role_name    = var.aws_terraform_role_name
 }
 
 # State Module - Creates S3 bucket and DynamoDB table for remote state

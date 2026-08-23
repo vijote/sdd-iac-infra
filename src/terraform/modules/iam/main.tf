@@ -1,6 +1,6 @@
 # Data source for manually created OIDC role
 data "aws_iam_role" "terraform_role" {
-  name = "${var.aws_terraform_role}"
+  name = var.aws_terraform_role_name
 }
 
 # Environment-specific least-privilege policies
