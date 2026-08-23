@@ -101,6 +101,8 @@ As a platform engineer, I need remote Terraform state with locking so that team 
 - **Required**: GitHub Actions OIDC authentication to AWS
 - **Prohibited**: Static AWS access keys or secret keys
 - **Implementation**: IAM roles with trust relationships to GitHub's OIDC provider
+- **OIDC Provider**: Manually provisioned AWS IAM OIDC provider for GitHub
+- **IAM Roles**: Manually created bootstrap and Terraform execution roles
 - **Reference**: This is the primary focus of Spec 002
 
 ### Local Development
@@ -122,6 +124,8 @@ As a platform engineer, I need remote Terraform state with locking so that team 
 - Existing networking infrastructure (from Spec 001) is available for deployment
 - Organization has security policies requiring least-privilege access
 - Multiple deployment environments exist (development, production)
+- **OIDC Provider**: AWS IAM OIDC provider for GitHub is manually provisioned
+- **IAM Roles**: Bootstrap and Terraform execution roles are manually created
 - **Production deployments**: Must use OIDC authentication via GitHub Actions (no static credentials)
 - **Local development**: May use access keys with MiniStack as defined in Spec 001
 - **CI/CD systems**: GitHub Actions is the primary deployment mechanism
