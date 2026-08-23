@@ -1,12 +1,9 @@
-# Data source for manually created OIDC role
-data "aws_iam_role" "terraform_role" {
-  name = var.aws_terraform_role_name
-}
+
 
 # Environment-specific least-privilege policies
 resource "aws_iam_role_policy" "terraform_permissions" {
   name = "terraform-permissions"
-  role = data.aws_iam_role.terraform_role.id
+  role = var.aws_terraform_role_name
   
   policy = jsonencode({
     Version = "2012-10-17"
@@ -133,7 +130,7 @@ resource "aws_iam_role_policy" "terraform_permissions" {
 # CloudWatch logging for audit trail
 resource "aws_iam_role_policy" "cloudwatch_logging" {
   name = "cloudwatch-logging"
-  role = data.aws_iam_role.terraform_role.id
+  role = var.aws_terraform_role_name
   
   policy = jsonencode({
     Version = "2012-10-17"
