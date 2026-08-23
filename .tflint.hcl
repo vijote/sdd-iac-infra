@@ -434,30 +434,6 @@ rule "aws_directory_service_directory_invalid_directory" {
   enabled = true
 }
 
-rule "aws_dynamodb_table_invalid_attribute" {
-  enabled = true
-}
-
-rule "aws_dynamodb_table_invalid_global_secondary_index" {
-  enabled = true
-}
-
-rule "aws_dynamodb_table_invalid_local_secondary_index" {
-  enabled = true
-}
-
-rule "aws_dynamodb_table_invalid_point_in_time_recovery" {
-  enabled = true
-}
-
-rule "aws_dynamodb_table_invalid_table" {
-  enabled = true
-}
-
-rule "aws_dynamodb_table_invalid_ttl" {
-  enabled = true
-}
-
 rule "aws_ebs_volume_invalid_volume" {
   enabled = true
 }

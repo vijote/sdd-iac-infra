@@ -143,7 +143,7 @@ src/terraform/
 │   ├── aws/
 │   │   ├── main.tf              # AWS provider + call networking module
 │   │   ├── terraform.tfvars     # AWS-specific values
-│   │   └── backend.tf           # S3 + DynamoDB remote state
+│   │   └── backend.tf           # S3 remote state
 │   └── ministack/
 │       ├── main.tf              # Ministack provider + call networking module
 │       ├── terraform.tfvars     # Ministack-specific values

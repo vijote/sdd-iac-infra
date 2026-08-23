@@ -114,7 +114,6 @@ All roles MUST require session tagging:
         "vpc:*",
         "s3:*",
         "iam:*",
-        "dynamodb:*",
         "cloudformation:*",
         "route53:*"
       ],
@@ -161,8 +160,6 @@ All roles MUST require session tagging:
         "s3:List*",
         "iam:Get*",
         "iam:List*",
-        "dynamodb:Describe*",
-        "dynamodb:Get*",
         "cloudformation:Describe*",
         "cloudformation:Get*",
         "route53:Get*",

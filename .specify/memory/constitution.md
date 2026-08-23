@@ -39,7 +39,7 @@ Every infrastructure decision is documented in the Decision Log. Every deploymen
 - **All Terraform must be validated:** `terraform fmt`, `terraform validate`, `terraform plan` before apply.
 - **Modularity:** Terraform code is organized by concern (VPC, EC2, K8s, secrets, etc.), not by layer.
 - **No hardcoding:** All variables and sensitive data are injected via `terraform.tfvars` or environment variables.
-- **State management:** Terraform state is backed up; remote state (S3 + DynamoDB) is optional but recommended.
+- **State management:** Terraform state is backed up; remote state (S3) is optional but recommended.
 - **Readability first:** Code is self-documenting; comments explain *why*, not *what*.
 
 ### Testing & Validation

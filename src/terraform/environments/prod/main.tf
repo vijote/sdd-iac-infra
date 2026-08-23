@@ -1,26 +1,26 @@
-# Development Environment Main Configuration
-# This file instantiates all required modules for the dev environment
+# Production Environment Main Configuration
+# This file instantiates all required modules for the prod environment
 
 # Networking Module - Creates VPC, subnets, security groups
 module "networking" {
   source = "../../modules/networking"
 
   # VPC Configuration
-  vpc_cidr          = "10.0.0.0/16"
-  environment       = "dev"
+  vpc_cidr          = "10.1.0.0/16"
+  environment       = "prod"
   project_name      = "sdd-infra"
   aws_region        = var.aws_region
 
   # Subnet Configuration (using defaults from module)
-  # Public subnets: 10.0.1.0/24, 10.0.2.0/24
-  # Private subnets: 10.0.11.0/24, 10.0.12.0/24
+  # Public subnets: 10.1.1.0/24, 10.1.2.0/24
+  # Private subnets: 10.1.11.0/24, 10.1.12.0/24
 }
 
 # IAM Module - Creates IAM roles for Terraform operations
 module "iam" {
   source = "../../modules/iam"
 
-  environment           = "dev"
+  environment           = "prod"
   aws_account_id        = var.aws_account_id
   aws_state_bucket_name = var.aws_state_bucket_name
   aws_region            = var.aws_region
@@ -31,7 +31,7 @@ module "iam" {
 module "state" {
   source = "../../modules/state"
 
-  environment           = "dev"
+  environment           = "prod"
   aws_state_bucket_name = var.aws_state_bucket_name
   aws_region            = var.aws_region
 }
@@ -52,19 +52,19 @@ output "private_subnet_ids" {
   value       = module.networking.private_subnet_ids
 }
 
-output "control_plane_security_group_id" {
-  description = "Control plane security group ID"
-  value       = module.networking.control_plane_security_group_id
+output "security_group_id" {
+  description = "Default security group ID"
+  value       = module.networking.security_group_id
 }
 
-output "worker_node_security_group_id" {
-  description = "Worker node security group ID"
-  value       = module.networking.worker_node_security_group_id
+output "internet_gateway_id" {
+  description = "Internet gateway ID"
+  value       = module.networking.internet_gateway_id
 }
 
-output "ingress_security_group_id" {
-  description = "Ingress security group ID"
-  value       = module.networking.ingress_security_group_id
+output "iam_role_arn" {
+  description = "IAM role ARN for Terraform operations"
+  value       = module.iam.terraform_role_arn
 }
 
 output "state_bucket_name" {

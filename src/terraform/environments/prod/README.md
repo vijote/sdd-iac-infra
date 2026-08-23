@@ -4,7 +4,7 @@ This directory contains Terraform configuration for the production environment.
 
 ## Configuration
 
-- `backend.tf` - S3 and DynamoDB backend configuration
+- `backend.tf` - S3 backend configuration
 - `provider.tf` - AWS provider configuration
 - `terraform.tfvars` - Production-specific variables
 
@@ -42,7 +42,7 @@ terraform apply -var-file="terraform.tfvars"
 ## State Management
 
 - Remote state stored in S3 with encryption
-- State locking via DynamoDB
+- State locking with S3
 - Versioning enabled for state recovery
 - Extended backup retention (365 days)
 - Additional state monitoring and alerts

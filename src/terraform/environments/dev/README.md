@@ -4,7 +4,7 @@ This directory contains Terraform configuration for the development environment.
 
 ## Configuration
 
-- `backend.tf` - S3 and DynamoDB backend configuration
+- `backend.tf` - S3 backend configuration
 - `provider.tf` - AWS provider configuration
 - `terraform.tfvars` - Development-specific variables
 

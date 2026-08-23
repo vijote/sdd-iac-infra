@@ -195,7 +195,7 @@ For more detailed troubleshooting, see the official kubeadm docs: https://kubern
 Location: `src/terraform/environments/aws/`
 
 - **Provider:** AWS (EC2, VPC, Route53, Secrets Manager, IAM)
-- **Backend:** Remote S3 + DynamoDB (recommended for production state management)
+- **Backend:** Remote S3 (recommended for production state management)
 - **Variables:** `terraform.tfvars` (create from `terraform.tfvars.example`)
 
 Deploy with:

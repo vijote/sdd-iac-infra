@@ -49,7 +49,6 @@ jobs:
           role-to-assume: ${{ env.AWS_TERRAFORM_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
           role-chaining: true
-          skip-session-tagging: true
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
