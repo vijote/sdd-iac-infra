@@ -6,26 +6,19 @@ module "networking" {
   source = "../../modules/networking"
 
   # VPC Configuration
-  vpc_cidr          = "10.1.0.0/16"
-  environment       = "prod"
-  project_name      = "sdd-infra"
-  aws_region        = var.aws_region
+  vpc_cidr     = "10.1.0.0/16"
+  environment  = "prod"
+  project_name = "sdd-infra"
+  aws_region   = var.aws_region
 
   # Subnet Configuration (using defaults from module)
   # Public subnets: 10.1.1.0/24, 10.1.2.0/24
   # Private subnets: 10.1.11.0/24, 10.1.12.0/24
 }
 
-# IAM Module - Creates IAM roles for Terraform operations
-module "iam" {
-  source = "../../modules/iam"
-
-  environment           = "prod"
-  aws_account_id        = var.aws_account_id
-  aws_state_bucket_name = var.aws_state_bucket_name
-  aws_region            = var.aws_region
-  aws_terraform_role_name    = var.aws_terraform_role_name
-}
+# IAM Role Note: Terraform execution role is manually provisioned
+# Role name: terraform-sdd-infra-role (defined in aws_terraform_role_name variable)
+# This avoids circular dependencies and maintains security isolation
 
 # State Module - Uses S3 bucket for remote state
 module "state" {

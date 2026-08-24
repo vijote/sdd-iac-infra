@@ -17,10 +17,7 @@ src/
 │   │   └── (future phases)
 │   ├── environments/      # Environment-specific configurations
 │   │   ├── dev/          # Development environment
-│   │   ├── staging/      # Staging environment
-│   │   ├── prod/         # Production environment
-│   │   ├── aws/          # Real AWS deployment
-│   │   └── ministack/    # Local ministack testing
+│   │   └── prod/         # Production environment
 │   └── shared/           # Shared configuration (versions, providers)
 │
 ├── k8s/                   # Kubernetes manifests & Helm charts

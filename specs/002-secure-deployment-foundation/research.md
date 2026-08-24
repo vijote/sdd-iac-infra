@@ -45,17 +45,18 @@
 
 ## IAM Role Structure
 
-### Decision: Environment-Specific Roles
+### Decision: Single Shared Role
 
 **Rationale**:
-- Clear separation of concerns between environments
-- Least privilege principle applied per environment
-- Easy to audit and manage permissions
-- Supports blast radius containment
+- Simplifies bootstrap process and avoids circular dependencies
+- Reduces operational complexity of managing multiple roles
+- Environment isolation handled through Terraform state separation
+- Manual role management provides security isolation from Terraform
 
 **Role Structure**:
-- `terraform-dev-role`: Full access to dev resources
-- `terraform-prod-role`: Highly restricted access to production
+- `terraform-sdd-infra-role`: Shared role for all environments with full infrastructure permissions
+- Environment separation achieved via separate Terraform state files
+- Manual role management outside of Terraform to avoid bootstrap issues
 
 ## GitHub Actions Workflow Strategy
 
@@ -99,8 +100,10 @@
 ### IAM Policy Scoping
 
 **Least Privilege Approach**:
-- Dev environment: Full access to VPC, EC2, S3 in dev account
-- Production: Minimal permissions for production changes
+- Single shared role with full infrastructure permissions
+- Environment isolation through state separation, not role separation
+- Security achieved through manual role management and OIDC trust constraints
+- Audit trail through session tagging and GitHub Actions logging
 
 ### Audit and Logging
 

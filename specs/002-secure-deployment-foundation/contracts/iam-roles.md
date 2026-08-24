@@ -8,35 +8,39 @@
 
 All IAM roles MUST follow the naming pattern:
 ```
-terraform-{environment}-role
+terraform-{project}-role
 ```
 
-Where `{environment}` is one of: `dev`, `prod`
+Where `{project}` is: `sdd-infra`
+
+**Note**: Single shared role used across all environments to simplify bootstrap and avoid circular dependencies. Environment isolation is handled through Terraform state separation, not role separation.
 
 ### Terraform Data Source Integration
 
 Roles are referenced in Terraform using data sources:
 
 ```hcl
-data "aws_iam_role" "terraform_role" {
-  name = "terraform-${var.environment}-role"
+variable "aws_terraform_role_name" {
+  description = "Name of manually created Terraform execution role"
+  type        = string
+  default     = "terraform-sdd-infra-role"
 }
 
-resource "aws_iam_role_policy" "terraform_permissions" {
-  name = "terraform-permissions"
-  role = data.aws_iam_role.terraform_role.id
-  
-  policy = jsonencode({
-    # Environment-specific permissions
-  })
+# Role is referenced but not managed by Terraform
+# Policy attachments are handled manually to avoid circular dependencies
+output "terraform_role_arn" {
+  description = "ARN of the Terraform execution role"
+  value       = "arn:aws:iam::${var.aws_account_id}:role/${var.aws_terraform_role_name}"
 }
 ```
 
 **Requirements**:
 - Roles MUST exist before Terraform apply
 - Role naming MUST follow the convention above
-- Terraform only manages policy attachments, not the role itself
+- Roles and policies are manually managed outside of Terraform
 - Manual role creation MUST include proper OIDC trust relationship
+- Terraform only references the role via variable inputs
+- No policy attachments or role modifications in Terraform code
 
 ### Required Trust Policy
 
@@ -95,11 +99,11 @@ All roles MUST require session tagging:
 }
 ```
 
-## Environment-Specific Role Contracts
+## Shared Role Contract
 
-### Development Role (terraform-dev-role)
+### Terraform Execution Role (terraform-sdd-infra-role)
 
-**Purpose**: Full access to development environment resources
+**Purpose**: Shared role for all Terraform operations across dev and prod environments
 
 **Required Permissions**:
 
@@ -115,94 +119,27 @@ All roles MUST require session tagging:
         "s3:*",
         "iam:*",
         "cloudformation:*",
-        "route53:*"
+        "route53:*",
+        "logs:*",
+        "cloudwatch:*"
       ],
       "Resource": "*",
       "Condition": {
         "StringEquals": {
-          "aws:RequestedRegion": ["us-east-1", "us-west-2"]
+          "aws:RequestedRegion": ["us-east-1"]
         }
       }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "logs:*",
-        "cloudwatch:*"
-      ],
-      "Resource": "*"
     }
   ]
 }
 ```
 
 **Constraints**:
-- Can only access development AWS account
-- Can only access specified regions
-- Full permissions for rapid iteration
-
-### Production Role (terraform-prod-role)
-
-**Purpose**: Highly restricted access to production environment
-
-**Required Permissions**:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:Describe*",
-        "vpc:Describe*",
-        "s3:Get*",
-        "s3:List*",
-        "iam:Get*",
-        "iam:List*",
-        "cloudformation:Describe*",
-        "cloudformation:Get*",
-        "route53:Get*",
-        "route53:List*"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringEquals": {
-          "aws:RequestedRegion": ["us-east-1", "us-west-2"]
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:CreateTags",
-        "ec2:DeleteTags",
-        "vpc:CreateTags",
-        "vpc:DeleteTags"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringEquals": {
-          "aws:RequestedRegion": ["us-east-1", "us-west-2"]
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "logs:*",
-        "cloudwatch:*"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-**Constraints**:
-- Read-only by default
-- Can only modify tags
-- All actions logged and monitored
+- Single role shared across all environments
+- Environment isolation handled by Terraform state separation
+- Full permissions required for complete infrastructure management
+- Session tagging enabled for audit trail
+- Trust relationship limited to specific GitHub repository
 
 ## Role Validation Contract
 

@@ -1,10 +1,9 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.0 → 2.0.0 (major amendment - removal of testing/validation requirements)
-- Modified principles: Removed testing & validation constraints, removed quality gates
-- Removed sections: Testing & Validation, Quality Gates
-- Added sections: Manual Validation Philosophy
-- Rationale: User wants manual AWS validation only, no upfront testing requirements
+- Version change: 2.0.0 → 2.1.0 (minor amendment - manual IAM management exception)
+- Modified principles: Principle II (Terraform Source of Truth) and Principle VI (Security Defaults)
+- Added exceptions: IAM roles and OIDC provider manually provisioned for bootstrap security
+- Rationale: Avoid circular dependencies, maintain security isolation for critical bootstrap resources
 -->
 
 # SDD-Infra Constitution
@@ -14,8 +13,10 @@ Sync Impact Report:
 ### I. Infrastructure as Code (IAC) First
 Every piece of infrastructure is declared in code. No manual AWS console clicks. Everything is version-controlled, reviewable, and reproducible. Code is the single source of truth; any manual changes are considered technical debt.
 
-### II. Terraform is the Source of Truth
-All AWS resources, IAM policies, networking, and compute provisioning are defined in Terraform. Terraform state is sacred; backups are maintained. Configuration drift is forbidden—any divergence between code and live infrastructure is a bug.
+### II. Terraform is the Source of Truth (with security exceptions)
+All AWS resources, networking, and compute provisioning are defined in Terraform. Terraform state is sacred; backups are maintained. Configuration drift is forbidden—any divergence between code and live infrastructure is a bug.
+
+**Security Exceptions**: IAM roles for Terraform execution and OIDC provider configuration are manually provisioned outside of Terraform. These bootstrap resources are manually managed to avoid circular dependencies and maintain security isolation. All exceptions are documented in the IAM Roles contract.
 
 ### III. Declarative Over Imperative
 We describe *what* the infrastructure should be, not *how* to build it step-by-step. Terraform plans are reviewed before apply; changes are deliberate and auditable. No surprise infrastructure modifications.
@@ -27,7 +28,7 @@ This is a learning project with tight budget constraints. Complexity is justifie
 Kubernetes is the container orchestration platform. This repo provisions the cluster and foundational infrastructure; applications are deployed separately from their own repos. Clear separation of concerns between cluster and apps.
 
 ### VI. Security Defaults, Not Afterthought
-IAM roles are least-privilege. Secrets are never in code; AWS Secrets Manager is mandatory. Inter-node communication is encrypted (Flannel VXLAN). VPC security groups restrict traffic. RBAC is minimal but foundational. Security reviews required for any changes.
+IAM roles are least-privilege and manually managed for bootstrap security. Secrets are never in code; AWS Secrets Manager is mandatory. Inter-node communication is encrypted (Flannel VXLAN). VPC security groups restrict traffic. RBAC is minimal but foundational. Security reviews required for any changes.
 
 ### VII. Documentation is Executable Proof
 Every infrastructure decision is documented in the Decision Log. Every deployment step is in code (cloud-init, Terraform provisioners). Runbooks exist before incidents happen. The Specification is the contract; Terraform is the implementation.

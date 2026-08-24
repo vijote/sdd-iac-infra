@@ -22,10 +22,11 @@ description: "Task list for feature implementation"
 ## Path Conventions
 
 - **CI/CD Workflows**: `.github/workflows/`
-- **IAM Modules**: `src/terraform/modules/iam/`
 - **State Modules**: `src/terraform/modules/state/`
+- **Networking Modules**: `src/terraform/modules/networking/`
 - **Environments**: `src/terraform/environments/`
 - **Tests**: `tests/ci_cd/`
+- **Note**: IAM roles are manually provisioned per constitutional amendment 2.1.0
 
 ## Phase 1: Setup (Shared Infrastructure)
 
@@ -51,6 +52,8 @@ description: "Task list for feature implementation"
 - [X] T009 Setup repository secrets configuration guide
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+
+**Note**: IAM module has been removed (2025-08-23) as IAM roles are manually provisioned per constitutional amendment 2.1.0. This eliminates circular dependencies and aligns with the manual security management approach.
 
 ---
 
