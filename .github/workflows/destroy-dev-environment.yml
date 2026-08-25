@@ -21,6 +21,8 @@ permissions:
 
 env:
   ENVIRONMENT: ${{ github.event.inputs.environment }}
+  AWS_BOOTSTRAP_ROLE: ${{ vars.AWS_BOOTSTRAP_ROLE }}
+  AWS_TERRAFORM_ROLE: ${{ vars.AWS_TERRAFORM_ROLE }}
   CONFIRMATION: ${{ github.event.inputs.confirm_destroy }}
   AWS_REGION: us-east-1
   TERRAFORM_VERSION: 1.5.7
@@ -34,11 +36,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS Credentials (Bootstrap)
+        uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions
+          role-to-assume: ${{ env.AWS_BOOTSTRAP_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Assume Terraform Target Role
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_TERRAFORM_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
           
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
