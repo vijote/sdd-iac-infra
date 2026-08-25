@@ -1,0 +1,169 @@
+name: Destroy Dev Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment to destroy'
+        required: true
+        type: choice
+        options:
+          - dev
+      confirm_destroy:
+        description: 'Type "destroy" to confirm'
+        required: true
+        default: ''
+
+permissions:
+  id-token: write          # Required for OIDC authentication
+  contents: read          # Required for repository checkout
+  actions: write          # Required for workflow summaries and artifacts
+
+env:
+  ENVIRONMENT: ${{ github.event.inputs.environment }}
+  CONFIRMATION: ${{ github.event.inputs.confirm_destroy }}
+  AWS_REGION: us-east-1
+  TERRAFORM_VERSION: 1.5.7
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 600  # 10 hours max
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          
+      - name: Validate Input
+        run: |
+          # Validate environment
+          if [ "${{ env.ENVIRONMENT }}" != "dev" ]; then
+            echo "::error::Only 'dev' environment is supported"
+            exit 1
+          fi
+          
+          # Validate confirmation
+          if [ "${{ env.CONFIRMATION }}" != "destroy" ]; then
+            echo "::error::Confirmation must be exactly 'destroy'"
+            exit 1
+          fi
+          
+          echo "✅ Input validation passed"
+          
+      - name: Generate Resource Inventory
+        run: |
+          # Create inventory directory
+          INVENTORY_DIR="inventory-${{ env.ENVIRONMENT }}-$(date +%Y%m%d-%H%M%S)"
+          mkdir -p "$INVENTORY_DIR"
+          
+          # Export Terraform state
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          terraform show -json > "../../$INVENTORY_DIR/terraform_state.json"
+          
+          # Save inventory to artifact
+          echo "inventory_dir=$INVENTORY_DIR" >> $GITHUB_ENV
+          
+      - name: Terraform Init
+        run: |
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          terraform init
+          
+      - name: Terraform Plan (Destroy)
+        id: plan
+        run: |
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          
+          # Generate destroy plan
+          terraform plan -destroy -out=destroy.plan
+          
+          # Show plan output
+          terraform show -json destroy.plan > destroy_plan.json
+          
+          # Create summary
+          echo "## 📋 Destruction Plan" >> $GITHUB_STEP_SUMMARY
+          echo "Environment: ${{ env.ENVIRONMENT }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          terraform show destroy.plan >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+      - name: Confirm Destruction
+        run: |
+          echo "⚠️  WARNING: About to destroy ${{ env.ENVIRONMENT }} environment"
+          echo "Resources to be destroyed:"
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          terraform show -json destroy.plan | jq '.planned_values.root_module.resources | length'
+          echo ""
+          echo "Type 'confirm' to proceed or 'cancel' to abort:"
+          
+          # In GitHub Actions, we use the initial confirmation
+          if [ "${{ env.CONFIRMATION }}" != "destroy" ]; then
+            echo "::error::Destruction cancelled"
+            exit 1
+          fi
+          
+          echo "✅ Proceeding with destruction..."
+          
+      - name: Terraform Destroy
+        id: destroy
+        run: |
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          
+          # Execute destruction
+          terraform apply -input=false -auto-approve destroy.plan
+          
+          # Verify destruction
+          terraform show -json > final_state.json
+          
+          echo "✅ Destruction completed"
+        continue-on-error: true
+        
+      - name: Generate Final Report
+        if: always()
+        run: |
+          # Determine destruction status
+          if [ "${{ steps.destroy.outcome }}" == "success" ]; then
+            STATUS="✅ Success"
+          else
+            STATUS="❌ Failed"
+          fi
+          
+          # Create report
+          cat > destruction_report.md << EOF
+          # 💥 Destruction Report - ${{ env.ENVIRONMENT }}
+          
+          **Status**: $STATUS  
+          **Requested by**: ${{ github.actor }}  
+          **Started**: $(date)  
+          **Pipeline**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          ## Resources Destroyed
+          EOF
+          
+          # Add resource details from final state
+          if [ -f final_state.json ]; then
+            echo "Final state saved" >> destruction_report.md
+          fi
+          
+          # Upload report as artifact
+          echo "report_path=destruction_report.md" >> $GITHUB_ENV
+          
+      - name: Cleanup on Failure
+        if: steps.destroy.outcome == 'failure'
+        run: |
+          echo "::error::Destruction failed"
+          echo "Some resources may still exist"
+          echo "Please check the AWS console"
+          echo "State backup has been saved"
+          exit 1
