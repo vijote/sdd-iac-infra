@@ -1,0 +1,96 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+
+# Install required packages
+packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+
+# Write containerd configuration
+write_files:
+  - path: /etc/modules-load.d/containerd.conf
+    content: |
+      overlay
+      br_netfilter
+  - path: /etc/sysctl.d/99-kubernetes-cri.conf
+    content: |
+      net.bridge.bridge-nf-call-iptables  = 1
+      net.ipv4.ip_forward                 = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+  - path: /etc/apt/sources.list.d/docker.list
+    content: |
+      deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu jammy stable
+  - path: /etc/apt/keyrings/docker.gpg
+    defer: true
+  - path: /etc/apt/sources.list.d/kubernetes.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+  - path: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+    defer: true
+  - path: /tmp/wait-for-control-plane.sh
+    content: |
+      #!/bin/bash
+      # Wait for control plane to be ready
+      CONTROL_PLANE_IP=${1}
+      echo "Waiting for control plane at ${CONTROL_PLANE_IP}:6443..."
+      
+      while ! nc -z ${CONTROL_PLANE_IP} 6443; do
+        echo "Control plane not ready, waiting 10 seconds..."
+        sleep 10
+      done
+      
+      echo "Control plane is ready!"
+    permissions: '0755'
+
+# Run commands to set up the worker node
+runcmd:
+  # Load kernel modules
+  - modprobe overlay
+  - modprobe br_netfilter
+  
+  # Apply sysctl settings
+  - sysctl --system
+  
+  # Add Docker GPG key
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - chmod a+r /etc/apt/keyrings/docker.gpg
+  
+  # Add Kubernetes GPG key
+  - curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+  - chmod a+r /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+  
+  # Update package lists
+  - apt-get update
+  
+  # Install containerd
+  - apt-get install -y containerd.io
+  
+  # Configure containerd
+  - mkdir -p /etc/containerd
+  - containerd config default | tee /etc/containerd/config.toml
+  - sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+  
+  # Restart containerd
+  - systemctl restart containerd
+  - systemctl enable containerd
+  
+  # Install Kubernetes components
+  - apt-get install -y kubelet kubeadm kubectl
+  - apt-mark hold kubelet kubeadm kubectl
+  
+  # Wait for control plane to be ready
+  - /tmp/wait-for-control-plane.sh ${CONTROL_PLANE_IP}
+  
+  # Get join command from control plane
+  - until scp -o StrictHostKeyChecking=no -i /tmp/ssh-key control-plane:/tmp/join-command.sh /tmp/join-command.sh; do echo "Waiting for join command..."; sleep 10; done
+  
+  # Execute join command
+  - bash /tmp/join-command.sh
+
+# Note: CONTROL_PLANE_IP_PLACEHOLDER will be replaced with actual IP during Terraform deployment
+final_message: "Worker node setup completed. Waiting to join cluster..."

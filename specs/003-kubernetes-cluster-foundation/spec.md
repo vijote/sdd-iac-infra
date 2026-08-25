@@ -48,11 +48,11 @@ As a Kubernetes administrator, I need to validate that containers can communicat
 
 **Why this priority**: Container networking is fundamental to Kubernetes functionality. Without working network interfaces, applications cannot communicate and the cluster is unusable.
 
-**Independent Test**: Can be fully tested by deploying network interface and verifying container-to-container communication across different nodes.
+**Independent Test**: Can be fully tested by deploying Flannel CNI and verifying container-to-container communication across different nodes.
 
 **Acceptance Scenarios**:
 
-1. **Given** cluster is initialized, **When** network interface is deployed, **Then** networking components are running on all nodes
+1. **Given** cluster is initialized, **When** Flannel CNI is deployed, **Then** networking components are running on all nodes
 2. **Given** networking is running, **When** I deploy test containers on different nodes, **Then** containers can communicate via their network addresses
 3. **Given** networking is functional, **When** I test service discovery, **Then** service names resolve correctly
 
@@ -72,7 +72,7 @@ As a Kubernetes administrator, I need to validate that containers can communicat
 - **FR-001**: System MUST provision exactly 1 control plane instance and 2 worker instances
 - **FR-002**: System MUST execute cluster initialization scripts via automatic configuration on control plane
 - **FR-003**: System MUST execute worker join scripts via automatic configuration on worker nodes
-- **FR-004**: System MUST deploy network interface for container networking
+- **FR-004**: System MUST deploy Flannel CNI for container networking
 - **FR-005**: System MUST configure service discovery for cluster services
 - **FR-006**: System MUST integrate with existing networking module security groups
 - **FR-007**: System MUST provide verification documentation
@@ -85,7 +85,7 @@ As a Kubernetes administrator, I need to validate that containers can communicat
 - **Compute Instance**: Virtual machines for control plane and worker nodes
 - **Cluster Configuration**: Cluster initialization and join configuration
 - **Bootstrap Script**: Automatic setup scripts for cluster initialization
-- **Network Interface**: Container network interface for container networking
+- **Flannel CNI**: Container network interface for container networking
 - **Security Group**: Network rules for cluster communication
 - **Access Configuration**: Cluster access configuration file
 
@@ -97,7 +97,7 @@ As a Kubernetes administrator, I need to validate that containers can communicat
 - **SC-002**: All instances boot successfully and execute initialization scripts
 - **SC-003**: Control plane initializes without manual intervention
 - **SC-004**: Worker nodes automatically join the cluster
-- **SC-005**: Network interface deploys and enables container-to-container communication
+- **SC-005**: Flannel CNI deploys and enables container-to-container communication
 - **SC-006**: Verification documentation is complete and accurate
 - **SC-007**: Infrastructure is ready for manual cluster validation
 - **SC-008**: No manual console clicks required post-deployment

@@ -1,0 +1,97 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+
+# Install required packages
+packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+
+# Write containerd configuration
+write_files:
+  - path: /etc/modules-load.d/containerd.conf
+    content: |
+      overlay
+      br_netfilter
+  - path: /etc/sysctl.d/99-kubernetes-cri.conf
+    content: |
+      net.bridge.bridge-nf-call-iptables  = 1
+      net.ipv4.ip_forward                 = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+  - path: /etc/apt/sources.list.d/docker.list
+    content: |
+      deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu jammy stable
+  - path: /etc/apt/keyrings/docker.gpg
+    defer: true
+  - path: /etc/apt/sources.list.d/kubernetes.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+  - path: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+    defer: true
+
+# Run commands to set up the control plane
+runcmd:
+  # Load kernel modules
+  - modprobe overlay
+  - modprobe br_netfilter
+  
+  # Apply sysctl settings
+  - sysctl --system
+  
+  # Add Docker GPG key
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - chmod a+r /etc/apt/keyrings/docker.gpg
+  
+  # Add Kubernetes GPG key
+  - curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+  - chmod a+r /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+  
+  # Update package lists
+  - apt-get update
+  
+  # Install containerd
+  - apt-get install -y containerd.io
+  
+  # Configure containerd
+  - mkdir -p /etc/containerd
+  - containerd config default | tee /etc/containerd/config.toml
+  - sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+  
+  # Restart containerd
+  - systemctl restart containerd
+  - systemctl enable containerd
+  
+  # Install Kubernetes components
+  - apt-get install -y kubelet kubeadm kubectl
+  - apt-mark hold kubelet kubeadm kubectl
+  
+  # Initialize Kubernetes cluster
+  - kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
+  
+  # Set up kubectl for root user
+  - mkdir -p /root/.kube
+  - cp -i /etc/kubernetes/admin.conf /root/.kube/config
+  - chown $(id -u):$(id -g) /root/.kube/config
+  
+  # Generate join command for workers
+  - kubeadm token create --print-join-command > /tmp/join-command.sh
+  - chmod +x /tmp/join-command.sh
+  
+  # Remove taint from control plane to allow pods (single-node cluster setup)
+  - kubectl taint nodes --all node-role.kubernetes.io/control-plane- || true
+  
+  # Deploy Flannel CNI
+  - kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+  
+  # Wait for Flannel pods to be ready
+  - kubectl wait --for=condition=ready pod -l app=flannel -n kube-flannel --timeout=300s
+  
+  # Verify CoreDNS is running
+  - kubectl wait --for=condition=ready pod -l k8s-app=kube-dns -n kube-system --timeout=300s
+
+# Output join command for easy access
+final_message: "Kubernetes control plane initialized successfully with Flannel CNI! Join command saved to /tmp/join-command.sh"

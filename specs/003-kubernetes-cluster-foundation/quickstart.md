@@ -1,295 +1,256 @@
-# Quickstart Guide: Kubernetes Cluster Foundation
+# Kubernetes Cluster Foundation - Quick Start Guide
 
-**Created**: 2025-08-24  
-**Purpose**: End-to-end validation scenarios for the Kubernetes cluster
+## Overview
+
+This guide provides step-by-step instructions for deploying and validating a 3-node Kubernetes cluster (1 control plane, 2 workers) on AWS using Terraform.
 
 ## Prerequisites
 
-### Tools Required
-- Terraform 1.0+ installed
 - AWS CLI configured with appropriate permissions
-- kubectl 1.28+ (for post-deployment validation)
-- SSH key pair created in AWS
-
-### AWS Permissions
-- EC2 instance management
-- VPC and subnet access
-- Security group management
-- EBS volume management
-- IAM instance profile usage
-
-### Dependencies
-- Spec 001: VPC Networking Foundation must be deployed
-- Spec 002: Secure Deployment Foundation must be deployed
+- Terraform 1.0+ installed
+- kubectl installed
+- SSH access to AWS instances (optional)
 
 ## Deployment Steps
 
-### 1. Prepare Environment
+### 1. Deploy Infrastructure
 
 ```bash
-# Clone repository
-git clone <repository-url>
-cd sdd-infra
+# Navigate to the dev environment
+cd src/terraform/environments/dev
 
 # Initialize Terraform
-cd src/terraform/environments/dev
 terraform init
 
-# Verify configuration
-terraform fmt
-terraform validate
-```
-
-### 2. Configure Variables
-
-Create `terraform.tfvars`:
-```hcl
-cluster_name = "sdd-k8s-dev"
-key_pair_name = "your-ssh-key-name"
-
-# From Spec 001
-vpc_id = "vpc-xxxxxxxxx"
-subnet_ids = ["subnet-xxxxxxxx", subnet-yyyyyyyy"]
-
-# From Spec 002
-control_plane_security_group_id = "sg-xxxxxxxx"
-worker_security_group_id = "sg-yyyyyyyy"
-```
-
-### 3. Deploy Infrastructure
-
-```bash
-# Review the plan
+# Review the execution plan
 terraform plan
 
-# Apply the configuration
-terraform apply -auto-approve
+# Deploy the infrastructure
+terraform apply
 ```
 
-Expected output:
-- 3 EC2 instances created
-- Control plane public IP displayed
-- kubeconfig content shown (sensitive)
-- Join command displayed (sensitive)
+### 2. Wait for Cluster Initialization
 
-### 4. Save Outputs
+The cluster initialization takes approximately 10-15 minutes. You can monitor progress:
 
 ```bash
-# Save control plane IP
-CONTROL_PLANE_IP=$(terraform output -raw control_plane_public_ip)
-echo "Control Plane IP: $CONTROL_PLANE_IP"
+# Check instance status in AWS console or via CLI
+aws ec2 describe-instances --filters "Name=tag:Cluster,Values=sdd-k8s-dev"
 
-# Save kubeconfig
-terraform output kubeconfig > kubeconfig
-export KUBECONFIG=$PWD/kubeconfig
-```
-
-## Validation Scenarios
-
-### Scenario 1: Verify Instance Status
-
-**Objective**: Confirm all EC2 instances are running
-
-**Steps**:
-```bash
-# Check instance status via AWS CLI
-aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=sdd-k8s-dev-*" \
-  --query "Reservations[*].Instances[*].[InstanceId,State.Name,InstanceType]" \
-  --output table
-```
-
-**Expected Output**:
-```
--------------------------------------------------
-|         DescribeInstances                    |
-+----------------------+-------------+--------+
-|  i-xxxxxxxxxxxxxx    |  running    |  t3.small  |
-|  i-yyyyyyyyyyyyyy    |  running    |  t3.micro  |
-|  i-zzzzzzzzzzzzzz    |  running    |  t3.micro  |
-+----------------------+-------------+--------+
-```
-
-### Scenario 2: Access Control Plane
-
-**Objective**: Verify SSH access to control plane
-
-**Steps**:
-```bash
-# SSH to control plane
-ssh -i your-key.pem ubuntu@$CONTROL_PLANE_IP
-
-# Check cloud-init status
-sudo cloud-init status
-# Expected: status: done
-
-# Check initialization logs
+# SSH to control plane to check logs (optional)
+ssh -i <your-key> ubuntu@<control-plane-public-ip>
 sudo tail -f /var/log/cloud-init-output.log
 ```
 
-**Expected Results**:
-- SSH connection successful
-- cloud-init status shows "done"
-- No errors in initialization logs
+### 3. Configure kubectl
 
-### Scenario 3: Verify Cluster Status
+After the control plane is ready:
 
-**Objective**: Confirm Kubernetes cluster is operational
-
-**Steps**:
 ```bash
-# On control plane, check node status
-sudo kubectl get nodes -o wide
+# SSH to control plane
+ssh -i <your-key> ubuntu@<control-plane-public-ip>
+
+# Copy kubeconfig
+sudo cat /etc/kubernetes/admin.conf
+
+# On your local machine, create kubeconfig
+mkdir -p ~/.kube
+# Paste the admin.conf content into ~/.kube/config
+# Or use:
+scp -i <your-key> ubuntu@<control-plane-public-ip>:/etc/kubernetes/admin.conf ~/.kube/config
+export KUBECONFIG=~/.kube/config
 ```
 
-**Expected Output**:
-```
-NAME               STATUS   ROLES           AGE   VERSION   INTERNAL-IP      EXTERNAL-IP
-ip-10-0-1-100      Ready    control-plane   5m    v1.28.0   10.0.1.100       <control-plane-ip>
-ip-10-0-1-101      Ready    <none>          3m    v1.28.0   10.0.1.101       <none>
-ip-10-0-1-102      Ready    <none>          3m    v1.28.0   10.0.1.102       <none>
-```
+## Manual Validation Guide
 
-### Scenario 4: Validate Networking
+### 1. Verify Instance Status
 
-**Objective**: Confirm pod-to-pod communication
+**Check in AWS Console:**
+1. Navigate to EC2 Instances
+2. Verify all 3 instances are running
+3. Check instance tags: `sdd-k8s-dev-control-plane`, `sdd-k8s-dev-worker-1`, `sdd-k8s-dev-worker-2`
 
-**Steps**:
+**Or via CLI:**
 ```bash
-# Deploy test pods
-sudo kubectl run test-pod-1 --image=busybox --restart=Never -- sleep 3600
-sudo kubectl run test-pod-2 --image=busybox --restart=Never -- sleep 3600
+aws ec2 describe-instances --filters "Name=tag:Cluster,Values=sdd-k8s-dev" --query "Reservations[*].Instances[*].{ID:InstanceId,Type:InstanceType,State:State.Name,Name:Tags[?Key=='Name'].Value|[0]}" --output table
+```
+
+### 2. Access Control Plane
+
+```bash
+# SSH to control plane
+ssh -i <your-key> ubuntu@<control-plane-public-ip>
+
+# Check if kubeadm initialization completed
+sudo kubectl get nodes
+```
+
+Expected output:
+```
+NAME                       STATUS   ROLES           AGE   VERSION
+ip-10-0-1-xxx.ec2.internal   Ready    control-plane   5m    v1.28.x
+ip-10-0-2-xxx.ec2.internal   Ready    <none>          3m    v1.28.x
+ip-10-0-2-yyy.ec2.internal   Ready    <none>          3m    v1.28.x
+```
+
+### 3. Check Cluster Status
+
+```bash
+# Verify all nodes are Ready
+kubectl get nodes
+
+# Check system pods
+kubectl get pods -n kube-system
+
+# Verify all system pods are Running
+kubectl get pods -n kube-system | grep -v Running
+```
+
+### 4. Validate Networking
+
+#### Test Pod-to-Pod Communication
+
+```bash
+# Create test pods
+kubectl run test-pod-1 --image=busybox --rm -it --restart=Never -- sleep 300 &
+kubectl run test-pod-2 --image=busybox --rm -it --restart=Never -- sleep 300 &
 
 # Wait for pods to be ready
-sudo kubectl wait --for=condition=Ready pod/test-pod-1 --timeout=60s
-sudo kubectl wait --for=condition=Ready pod/test-pod-2 --timeout=60s
+kubectl wait --for=condition=ready pod/test-pod-1 --timeout=60s
+kubectl wait --for=condition=ready pod/test-pod-2 --timeout=60s
 
-# Test pod-to-pod communication
-sudo kubectl exec test-pod-1 -- ping -c 3 10.244.2.2
+# Get pod IPs
+POD1_IP=$(kubectl get pod test-pod-1 -o jsonpath='{.status.podIP}')
+POD2_IP=$(kubectl get pod test-pod-2 -o jsonpath='{.status.podIP}')
+
+# Test connectivity
+kubectl exec test-pod-1 -- ping -c 3 $POD2_IP
+kubectl exec test-pod-2 -- ping -c 3 $POD1_IP
+
+# Clean up
+kubectl delete pod test-pod-1 test-pod-2
 ```
 
-**Expected Results**:
-- Both pods become Ready
-- Ping successful with <1ms latency
+#### Test Service Discovery
 
-### Scenario 5: Verify Service Discovery
-
-**Objective**: Confirm CoreDNS is working
-
-**Steps**:
 ```bash
-# Test DNS resolution
-sudo kubectl exec test-pod-1 -- nslookup kubernetes.default
+# Create a test service
+kubectl create deployment test-nginx --image=nginx --port=80
+kubectl expose deployment test-nginx --port=80 --target-port=80
 
-# Test service connectivity
-sudo kubectl run dns-test --image=busybox --restart=Never --rm -it -- nslookup kubernetes.default.svc.cluster.local
+# Test service access
+kubectl run test-client --image=busybox --rm -it --restart=Never -- wget -qO- http://test-nginx.default.svc.cluster.local
+
+# Clean up
+kubectl delete deployment test-nginx
+kubectl delete service test-nginx
 ```
 
-**Expected Results**:
-- DNS resolves successfully
-- Service name resolves to cluster IP
+### 5. Verify Flannel CNI
 
-### Scenario 6: Validate CNI
-
-**Objective**: Confirm Flannel CNI is operational
-
-**Steps**:
 ```bash
 # Check Flannel pods
-sudo kubectl get pods -n kube-flannel
+kubectl get pods -n kube-flannel
 
-# Check network interfaces
-sudo kubectl exec test-pod-1 -- ip addr show flannel.1
+# Check Flannel network interface
+kubectl exec -n kube-flannel -l app=flannel -- ip addr show flannel.1
+
+# Verify pod network
+kubectl get pods -o wide
 ```
 
-**Expected Results**:
-- All Flannel pods are Running
-- Flannel interface exists with VXLAN endpoint
+## Troubleshooting Common Issues
 
-## Troubleshooting Guide
+### Instance Not Starting
 
-### Common Issues
+1. Check AWS CloudTrail for any API errors
+2. Verify IAM roles have sufficient permissions
+3. Check if instance type is available in the region
 
-1. **Instance Not Booting**
-   - Check AWS Console for instance status
-   - Verify security group allows SSH
-   - Check subnet has available IP addresses
+### Cluster Initialization Fails
 
-2. **Cloud-init Fails**
-   - SSH to instance and check logs: `sudo tail -f /var/log/cloud-init-output.log`
-   - Verify user-data script is valid YAML
-   - Check internet connectivity for package downloads
+1. Check cloud-init logs: `sudo tail -f /var/log/cloud-init-output.log`
+2. Verify all required packages installed
+3. Check if ports 6443, 2379-2380 are open in security groups
 
-3. **kubeadm Init Fails**
-   - Check system resources (CPU, RAM)
-   - Verify container runtime is running
-   - Check port conflicts (6443, 2379-2380)
+### Network Issues
 
-4. **Workers Not Joining**
-   - Verify join token is valid (24-hour expiry)
-   - Check network connectivity to control plane
-   - Verify certificate hash matches
+1. Verify security group rules allow pod network traffic
+2. Check if VPC routing is configured correctly
+3. See [network-troubleshooting.md](network-troubleshooting.md) for detailed steps
 
-5. **Pod Networking Issues**
-   - Check Flannel pods are running
-   - Verify VXLAN port 4789 is open
-   - Check node-to-node connectivity
+### Pods Stuck in ContainerCreating
 
-### Recovery Commands
-
-```bash
-# Reset kubeadm (if needed)
-sudo kubeadm reset
-sudo rm -rf /etc/cni/net.d
-sudo systemctl restart kubelet
-
-# Reinitialize control plane
-sudo kubeadm init --pod-network-cidr=10.244.0.0/16
-
-# Regenerate join command
-sudo kubeadm token create --print-join-command
-```
+1. Check CNI installation: `kubectl get pods -n kube-flannel`
+2. Verify pod network CIDR doesn't overlap with VPC CIDR
+3. Restart Flannel: `kubectl delete pods -n kube-flannel -l app=flannel`
 
 ## Cleanup
 
-### Remove Cluster
+To destroy the cluster:
 
 ```bash
-# Destroy infrastructure
 cd src/terraform/environments/dev
-terraform destroy -auto-approve
-
-# Remove local files
-rm -f kubeconfig
-unset KUBECONFIG
+terraform destroy
 ```
 
-### Verify Cleanup
+## Production Considerations
 
+For production deployment:
+
+1. Use larger instance types (t3.medium or higher)
+2. Enable control plane HA (multiple control plane nodes)
+3. Configure proper backup and disaster recovery
+4. Set up monitoring and logging
+5. Use private subnets with NAT gateways
+6. Enable encryption at rest for EBS volumes
+
+## Network Troubleshooting
+
+### Common Network Issues
+
+#### Flannel CNI Issues
+- **Symptoms**: Pods stuck in `ContainerCreating`, `cni0` interface not found
+- **Solution**: 
+  ```bash
+  kubectl get pods -n kube-flannel
+  kubectl logs -n kube-flannel -l app=flannel
+  kubectl delete pods -n kube-flannel -l app=flannel
+  ```
+
+#### CoreDNS Issues
+- **Symptoms**: Service names don't resolve, `nslookup` failures
+- **Solution**:
+  ```bash
+  kubectl get pods -n kube-system -l k8s-app=kube-dns
+  kubectl logs -n kube-system -l k8s-app=kube-dns
+  kubectl delete pods -n kube-system -l k8s-app=kube-dns
+  ```
+
+#### Pod Network Connectivity
+- **Symptoms**: Pods cannot communicate across nodes
+- **Solution**:
+  ```bash
+  # Check security group rules
+  aws ec2 describe-security-groups --group-ids <sg-id>
+  # Verify VXLAN traffic (UDP port 4789) is allowed
+  ```
+
+### Network Validation Commands
 ```bash
-# Check instances are terminated
-aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=sdd-k8s-dev-*" \
-  --query "Reservations[*].Instances[*].[InstanceId,State.Name]" \
-  --output table
+# Test pod-to-pod communication
+kubectl exec <pod1> -- ping <pod2-ip>
+
+# Test service discovery
+kubectl exec <pod> -- nslookup kubernetes.default
+
+# Check network policies
+kubectl get networkpolicies --all-namespaces
 ```
 
-## Success Criteria
+## Support
 
-The deployment is successful when:
-- [ ] All 3 EC2 instances are running
-- [ ] Control plane accessible via SSH
-- [ ] Kubernetes cluster initialized (1 control plane, 2 workers)
-- [ ] All nodes in Ready state
-- [ ] Pod-to-pod communication working
-- [ ] Service discovery functional
-- [ ] Flannel CNI operational
-- [ ] Monthly cost under $50
-
-## Next Steps
-
-After successful validation:
-1. Deploy applications to the cluster
-2. Configure monitoring and logging
-3. Set up backup procedures
-4. Plan for production deployment
+For issues not covered in this guide:
+1. Review cloud-init logs on each instance
+2. Check Terraform state for any failed resources
+3. Verify AWS service limits and quotas
