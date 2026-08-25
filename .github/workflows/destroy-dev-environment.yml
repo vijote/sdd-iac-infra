@@ -70,19 +70,6 @@ jobs:
           
           echo "✅ Input validation passed"
           
-      - name: Generate Resource Inventory
-        run: |
-          # Create inventory directory
-          INVENTORY_DIR="inventory-${{ env.ENVIRONMENT }}-$(date +%Y%m%d-%H%M%S)"
-          mkdir -p "$INVENTORY_DIR"
-          
-          # Export Terraform state
-          cd src/terraform/environments/${{ env.ENVIRONMENT }}
-          terraform show -json > "../../$INVENTORY_DIR/terraform_state.json"
-          
-          # Save inventory to artifact
-          echo "inventory_dir=$INVENTORY_DIR" >> $GITHUB_ENV
-          
       - name: Terraform Init
         run: |
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
