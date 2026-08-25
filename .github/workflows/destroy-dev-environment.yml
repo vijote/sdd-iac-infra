@@ -78,7 +78,7 @@ jobs:
       - name: Terraform Init
         run: |
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
-          terraform init
+          terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}"
           
       - name: Terraform Plan (Destroy)
         id: plan
