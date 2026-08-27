@@ -91,15 +91,54 @@ jobs:
             -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}" \
             -backend-config="key=application-deployment/${{ env.ENVIRONMENT }}/terraform.tfstate"
       
+      - name: Generate terraform.tfvars
+        id: generate-tfvars
+        run: |
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          
+          # Generate terraform.tfvars with repository variables and secrets
+          cat > terraform.tfvars << EOF
+          # AWS Configuration
+          aws_account_id = "${{ env.TF_VAR_aws_account_id }}"
+          aws_terraform_role_name = "${{ env.TF_VAR_aws_terraform_role_name }}"
+          aws_state_bucket_name = "${{ env.TF_VAR_aws_state_bucket_name }}"
+          
+          # MySQL Configuration
+          mysql_root_password = "${{ env.TF_VAR_mysql_root_password }}"
+          mysql_database = "${{ env.ENVIRONMENT == 'prod' ? 'demo_app' : 'demo_app_dev' }}"
+          mysql_user = "demo_user"
+          mysql_password = "${{ env.TF_VAR_mysql_password }}"
+          mysql_storage_size = "${{ env.ENVIRONMENT == 'prod' ? '50Gi' : '20Gi' }}"
+          mysql_storage_class = "${{ env.ENVIRONMENT == 'prod' ? 'gp3' : 'gp2' }}"
+          
+          # Container Images
+          frontend_image = "${{ env.ENVIRONMENT == 'prod' ? 'nginx:1.24-alpine' : 'nginx:alpine' }}"
+          backend_image = "${{ env.ENVIRONMENT == 'prod' ? 'node:18.17-alpine' : 'node:18-alpine' }}"
+          mysql_image = "${{ env.ENVIRONMENT == 'prod' ? 'mysql:8.0.33' : 'mysql:8.0' }}"
+          
+          # Replicas
+          frontend_replicas = ${{ env.ENVIRONMENT == 'prod' ? 2 : 1 }}
+          backend_replicas = ${{ env.ENVIRONMENT == 'prod' ? 2 : 1 }}
+          mysql_replicas = 1
+          
+          # Resource Limits
+          frontend_cpu_limit = "${{ env.ENVIRONMENT == 'prod' ? '200m' : '100m' }}"
+          frontend_memory_limit = "${{ env.ENVIRONMENT == 'prod' ? '256Mi' : '128Mi' }}"
+          backend_cpu_limit = "${{ env.ENVIRONMENT == 'prod' ? '400m' : '200m' }}"
+          backend_memory_limit = "${{ env.ENVIRONMENT == 'prod' ? '512Mi' : '256Mi' }}"
+          mysql_cpu_limit = "${{ env.ENVIRONMENT == 'prod' ? '500m' : '300m' }}"
+          mysql_memory_limit = "${{ env.ENVIRONMENT == 'prod' ? '1Gi' : '512Mi' }}"
+          
+          # JWT Secret
+          jwt_secret = "${{ env.TF_VAR_jwt_secret }}"
+          EOF
+      
       - name: Plan Terraform
         id: plan
         run: |
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
           terraform plan -input=false \
-            -var="aws_account_id=${{ env.TF_VAR_aws_account_id }}" \
-            -var="aws_terraform_role_name=${{ env.TF_VAR_aws_terraform_role_name }}" \
-            -var="aws_state_bucket_name=${{ env.TF_VAR_aws_state_bucket_name }}" \
-            -var-file=variables.tf \
+            -var-file=terraform.tfvars \
             -out=tfplan
       
       - name: Apply Terraform
