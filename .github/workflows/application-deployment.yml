@@ -43,7 +43,7 @@ jobs:
   deploy:
     name: Deploy Applications
     runs-on: ubuntu-latest
-    environment: ${{ env.ENVIRONMENT }}
+    environment: ${{ github.event.inputs.environment || 'dev' }}
     
     outputs:
       deployment_id: ${{ env.DEPLOYMENT_ID }}
