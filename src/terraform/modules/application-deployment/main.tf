@@ -10,6 +10,16 @@ provider "kubernetes" {
   token = var.cluster_token != "" ? var.cluster_token : null
 }
 
+# Configure kubectl provider
+provider "kubectl" {
+  config_path = var.kubeconfig_path
+  
+  # Use direct cluster configuration if provided
+  host = var.cluster_endpoint != "" ? var.cluster_endpoint : null
+  cluster_ca_certificate = var.cluster_ca_certificate != "" ? var.cluster_ca_certificate : null
+  token = var.cluster_token != "" ? var.cluster_token : null
+}
+
 # Create namespace for demo applications
 resource "kubernetes_namespace" "demo_apps" {
   metadata {
