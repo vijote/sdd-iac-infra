@@ -99,7 +99,7 @@ jobs:
             -var="aws_account_id=${{ env.TF_VAR_aws_account_id }}" \
             -var="aws_terraform_role_name=${{ env.TF_VAR_aws_terraform_role_name }}" \
             -var="aws_state_bucket_name=${{ env.TF_VAR_aws_state_bucket_name }}" \
-            -var-file=terraform.tfvars \
+            -var-file=variables.tf \
             -out=tfplan
       
       - name: Apply Terraform
