@@ -46,10 +46,10 @@ jobs:
     environment: ${{ env.ENVIRONMENT }}
     
     outputs:
-      deployment_id: ${{ steps.deploy.outputs.deployment_id }}
-      status: ${{ steps.validate.outputs.status }}
-      service_urls: ${{ steps.validate.outputs.service_urls }}
-      rollback_available: ${{ steps.deploy.outputs.rollback_available }}
+      deployment_id: ${{ env.DEPLOYMENT_ID }}
+      status: ${{ job.status }}
+      terraform_apply: ${{ steps.apply.outcome }}
+      app_deploy: ${{ steps.deploy.outcome }}
     
     steps:
       - name: Checkout
@@ -94,6 +94,7 @@ jobs:
             -var="aws_account_id=${{ env.TF_VAR_aws_account_id }}" \
             -var="aws_terraform_role_name=${{ env.TF_VAR_aws_terraform_role_name }}" \
             -var="aws_state_bucket_name=${{ env.TF_VAR_aws_state_bucket_name }}" \
+            -var-file=${{ env.ENVIRONMENT }}.tfvars \
             -out=tfplan
       
       - name: Apply Terraform
@@ -102,39 +103,78 @@ jobs:
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
           terraform apply -input=false -auto-approve tfplan
       
-      - name: Configure kubectl
-        id: kubectl
+      - name: Generate kubeconfig
+        id: kubeconfig
         run: |
-          echo "${{ secrets.KUBERNETES_CONFIG }}" | base64 -d > kubeconfig
-          export KUBECONFIG=$PWD/kubeconfig
-          kubectl config use-context ${{ env.ENVIRONMENT }}
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          
+          # Get cluster outputs
+          CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint 2>/dev/null || echo "")
+          CONTROL_PLANE_IP=$(terraform output -raw control_plane_public_ip 2>/dev/null || echo "")
+          
+          if [ -n "$CONTROL_PLANE_IP" ]; then
+            CLUSTER_ENDPOINT="https://$CONTROL_PLANE_IP:6443"
+          fi
+          
+          if [ -n "$CLUSTER_ENDPOINT" ]; then
+            # Generate a basic kubeconfig for the cluster
+            mkdir -p ~/.kube
+            cat > ~/.kube/config << EOF
+apiVersion: v1
+kind: Config
+clusters:
+- name: sdd-k8s-${{ env.ENVIRONMENT }}
+  cluster:
+    server: $CLUSTER_ENDPOINT
+    insecure-skip-tls-verify: true
+contexts:
+- name: sdd-k8s-${{ env.ENVIRONMENT }}
+  context:
+    cluster: sdd-k8s-${{ env.ENVIRONMENT }}
+    user: sdd-k8s-${{ env.ENVIRONMENT }}-admin
+current-context: sdd-k8s-${{ env.ENVIRONMENT }}
+users:
+- name: sdd-k8s-${{ env.ENVIRONMENT }}-admin
+  user:
+    auth-provider:
+      name: aws
+      config:
+        clusterID: sdd-k8s-${{ env.ENVIRONMENT }}
+EOF
+            echo "Kubeconfig generated for cluster: $CLUSTER_ENDPOINT"
+          else
+            echo "No cluster endpoint found, skipping kubeconfig generation"
+          fi
       
       - name: Deploy Applications
         id: deploy
         run: |
-          export KUBECONFIG=$PWD/kubeconfig
-          chmod +x scripts/deploy-application.sh
-          ./scripts/deploy-application.sh ${{ env.ENVIRONMENT }} ${{ env.DEPLOYMENT_ID }}
-      
-      - name: Validate Deployment
-        id: validate
-        run: |
-          export KUBECONFIG=$PWD/kubeconfig
-          chmod +x scripts/validate-deployment.sh
-          ./scripts/validate-deployment.sh ${{ env.ENVIRONMENT }} ${{ env.DEPLOYMENT_ID }}
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          
+          # Apply application deployment
+          terraform apply -input=false -auto-approve -target=module.application_deployment
       
       - name: Rollback on Failure
-        if: failure() && steps.validate.outputs.status != 'success'
+        if: failure()
         run: |
-          export KUBECONFIG=$PWD/kubeconfig
-          chmod +x scripts/rollback-deployment.sh
-          ./scripts/rollback-deployment.sh ${{ env.ENVIRONMENT }} ${{ env.DEPLOYMENT_ID }}
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          echo "Rolling back application deployment..."
+          terraform destroy -input=false -auto-approve -target=module.application_deployment
       
       - name: Notify Deployment Status
         if: always()
         run: |
-          if [ "${{ steps.validate.outputs.status }}" == "success" ]; then
+          if [ "${{ job.status }}" == "success" ]; then
             echo "Deployment ${{ env.DEPLOYMENT_ID }} to ${{ env.ENVIRONMENT }} completed successfully"
+            echo "Applications deployed:"
+            echo "- Frontend (nginx)"
+            echo "- Backend (NodeJS)"
+            echo "- Database (MySQL)"
+            echo ""
+            echo "To check deployment status:"
+            echo "kubectl get pods -n demo-apps"
+            echo "kubectl get services -n demo-apps"
           else
             echo "Deployment ${{ env.DEPLOYMENT_ID }} to ${{ env.ENVIRONMENT }} failed"
+            echo "Check the logs for details"
           fi

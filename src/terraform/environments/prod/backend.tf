@@ -1,6 +1,7 @@
 terraform {
   backend "s3" {
-    key          = "prod/terraform.tfstate"
+    bucket       = var.aws_state_bucket_name
+    key          = "application-deployment/prod/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
     use_lockfile = true

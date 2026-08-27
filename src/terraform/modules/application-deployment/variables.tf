@@ -4,6 +4,25 @@ variable "kubeconfig_path" {
   default     = "~/.kube/config"
 }
 
+variable "cluster_endpoint" {
+  description = "Kubernetes cluster endpoint"
+  type        = string
+  default     = ""
+}
+
+variable "cluster_ca_certificate" {
+  description = "Kubernetes cluster CA certificate"
+  type        = string
+  default     = ""
+}
+
+variable "cluster_token" {
+  description = "Kubernetes authentication token"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "namespace" {
   description = "Kubernetes namespace for demo applications"
   type        = string
