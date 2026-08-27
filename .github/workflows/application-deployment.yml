@@ -83,12 +83,6 @@ jobs:
         with:
           version: 'latest'
       
-      - name: Apply Terraform - Infrastructure
-        id: apply-infra
-        run: |
-          cd src/terraform/environments/${{ env.ENVIRONMENT }}
-          terraform apply -input=false -auto-approve -target=module.kubernetes
-      
       - name: Generate kubeconfig
         run: |
           # Wait for cluster to be ready
@@ -185,6 +179,12 @@ jobs:
           terraform plan -input=false \
             -var-file=terraform.tfvars \
             -out=tfplan
+
+      - name: Apply Terraform - Infrastructure
+        id: apply-infra
+        run: |
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          terraform apply -input=false -auto-approve -target=module.kubernetes
       
       - name: Apply Terraform - Applications
         id: apply
