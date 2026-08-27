@@ -1,0 +1,92 @@
+# Production Environment Configuration
+
+environment: prod
+auto_deploy: false
+require_approval: true
+approvers: ["admin-team"]
+
+# Resource limits for production
+resource_limits:
+  cpu: "1000m"
+  memory: "2Gi"
+  replicas: 2
+
+# Environment-specific settings
+settings:
+  debug: false
+  log_level: "info"
+  
+# Database configuration
+database:
+  mysql:
+    storage_size: "100Gi"
+    storage_class: "gp2"
+    backup_retention: "30d"
+    multi_az: true
+
+# Application settings
+applications:
+  backend:
+    replicas: 2
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+      limits:
+        cpu: "1000m"
+        memory: "1Gi"
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+      
+  frontend:
+    replicas: 2
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    env:
+      NODE_ENV: "production"
+      API_URL: "https://api.example.com"
+
+# Monitoring and observability
+monitoring:
+  enabled: true
+  metrics_port: "9090"
+  health_check_interval: "15s"
+  alerting:
+    enabled: true
+    slack_webhook: "${{ secrets.NOTIFICATION_WEBHOOK }}"
+
+# Security settings
+security:
+  tls_enabled: true
+  network_policies: true
+  pod_security_policy: true
+  
+# Deployment timeouts
+timeouts:
+  deployment_timeout: "600s"
+  health_check_timeout: "120s"
+  rollback_timeout: "300s"
+
+# Production-specific constraints
+constraints:
+  max_unavailable: "25%"
+  max_surge: "25%"
+  progress_deadline_seconds: "600"
+  
+# Backup and disaster recovery
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: "30d"
+  
+# Compliance and audit
+audit:
+  enabled: true
+  log_all_api_calls: true
+  retention: "90d"

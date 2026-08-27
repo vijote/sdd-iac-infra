@@ -1,0 +1,68 @@
+# Development Environment Configuration
+
+environment: dev
+auto_deploy: true
+require_approval: false
+
+# Resource limits for development
+resource_limits:
+  cpu: "500m"
+  memory: "1Gi"
+  replicas: 1
+
+# Environment-specific settings
+settings:
+  debug: true
+  log_level: "debug"
+  
+# Database configuration
+database:
+  mysql:
+    storage_size: "10Gi"
+    storage_class: "gp2"
+    backup_retention: "7d"
+
+# Application settings
+applications:
+  backend:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    env:
+      NODE_ENV: "development"
+      LOG_LEVEL: "debug"
+      
+  frontend:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "128Mi"
+      limits:
+        cpu: "200m"
+        memory: "256Mi"
+    env:
+      NODE_ENV: "development"
+      API_URL: "http://backend.demo-apps.svc.cluster.local:3000"
+
+# Monitoring and observability
+monitoring:
+  enabled: true
+  metrics_port: "9090"
+  health_check_interval: "30s"
+
+# Security settings
+security:
+  tls_enabled: false
+  network_policies: false
+  
+# Deployment timeouts
+timeouts:
+  deployment_timeout: "300s"
+  health_check_timeout: "60s"
+  rollback_timeout: "180s"

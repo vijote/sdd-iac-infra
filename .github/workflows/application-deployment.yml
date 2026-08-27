@@ -1,0 +1,140 @@
+name: Application Deployment
+
+on:
+  push:
+    branches: [main]  # Auto-deploy to dev
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options: [dev, prod]
+      force_deploy:
+        description: 'Force deployment even if health checks fail'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  id-token: write          # Required for OIDC
+  contents: read          # Required for checkout
+  pull-requests: write    # Required for PR comments (if needed)
+  actions: read           # Required for workflow status
+
+env:
+  # Core Configuration (from repository)
+  ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+  AWS_REGION: us-east-1
+  AWS_BOOTSTRAP_ROLE: ${{ vars.AWS_BOOTSTRAP_ROLE }}
+  AWS_TERRAFORM_ROLE: ${{ vars.AWS_TERRAFORM_ROLE }}
+  STATE_BUCKET_NAME: ${{ vars.STATE_BUCKET_NAME }}
+  TF_VAR_aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+  TF_VAR_aws_terraform_role_name: ${{ vars.AWS_TERRAFORM_ROLE_NAME }}
+  TF_VAR_aws_state_bucket_name: ${{ vars.STATE_BUCKET_NAME }}
+  
+  # Pipeline-Specific
+  DEPLOYMENT_ID: deploy-${{ github.run_number }}-${{ github.sha }}
+  COMMIT_SHA: ${{ github.sha }}
+  BRANCH: ${{ github.ref_name }}
+
+jobs:
+  deploy:
+    name: Deploy Applications
+    runs-on: ubuntu-latest
+    environment: ${{ env.ENVIRONMENT }}
+    
+    outputs:
+      deployment_id: ${{ steps.deploy.outputs.deployment_id }}
+      status: ${{ steps.validate.outputs.status }}
+      service_urls: ${{ steps.validate.outputs.service_urls }}
+      rollback_available: ${{ steps.deploy.outputs.rollback_available }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials (Bootstrap)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_BOOTSTRAP_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Assume Terraform Target Role
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_TERRAFORM_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ">=1.5"
+      
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: '>=1.24'
+      
+      - name: Initialize Terraform
+        id: init
+        run: |
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          terraform init -input=false \
+            -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}" \
+            -backend-config="key=application-deployment/${{ env.ENVIRONMENT }}/terraform.tfstate"
+      
+      - name: Plan Terraform
+        id: plan
+        run: |
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          terraform plan -input=false \
+            -var="aws_account_id=${{ env.TF_VAR_aws_account_id }}" \
+            -var="aws_terraform_role_name=${{ env.TF_VAR_aws_terraform_role_name }}" \
+            -var="aws_state_bucket_name=${{ env.TF_VAR_aws_state_bucket_name }}" \
+            -out=tfplan
+      
+      - name: Apply Terraform
+        id: apply
+        run: |
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          terraform apply -input=false -auto-approve tfplan
+      
+      - name: Configure kubectl
+        id: kubectl
+        run: |
+          echo "${{ secrets.KUBERNETES_CONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=$PWD/kubeconfig
+          kubectl config use-context ${{ env.ENVIRONMENT }}
+      
+      - name: Deploy Applications
+        id: deploy
+        run: |
+          export KUBECONFIG=$PWD/kubeconfig
+          chmod +x scripts/deploy-application.sh
+          ./scripts/deploy-application.sh ${{ env.ENVIRONMENT }} ${{ env.DEPLOYMENT_ID }}
+      
+      - name: Validate Deployment
+        id: validate
+        run: |
+          export KUBECONFIG=$PWD/kubeconfig
+          chmod +x scripts/validate-deployment.sh
+          ./scripts/validate-deployment.sh ${{ env.ENVIRONMENT }} ${{ env.DEPLOYMENT_ID }}
+      
+      - name: Rollback on Failure
+        if: failure() && steps.validate.outputs.status != 'success'
+        run: |
+          export KUBECONFIG=$PWD/kubeconfig
+          chmod +x scripts/rollback-deployment.sh
+          ./scripts/rollback-deployment.sh ${{ env.ENVIRONMENT }} ${{ env.DEPLOYMENT_ID }}
+      
+      - name: Notify Deployment Status
+        if: always()
+        run: |
+          if [ "${{ steps.validate.outputs.status }}" == "success" ]; then
+            echo "Deployment ${{ env.DEPLOYMENT_ID }} to ${{ env.ENVIRONMENT }} completed successfully"
+          else
+            echo "Deployment ${{ env.DEPLOYMENT_ID }} to ${{ env.ENVIRONMENT }} failed"
+          fi
