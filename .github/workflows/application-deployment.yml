@@ -83,6 +83,51 @@ jobs:
         with:
           version: 'latest'
       
+      - name: Apply Terraform - Infrastructure
+        id: apply-infra
+        run: |
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          terraform apply -input=false -auto-approve -target=module.kubernetes
+      
+      - name: Generate kubeconfig
+        run: |
+          # Wait for cluster to be ready
+          echo "Waiting for Kubernetes cluster to be ready..."
+          sleep 30
+          
+          # Get the control plane IP from Terraform outputs
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          CONTROL_PLANE_IP=$(terraform output -raw control_plane_public_ip 2>/dev/null || echo "")
+          
+          if [ -n "$CONTROL_PLANE_IP" ]; then
+            # Generate a basic kubeconfig that can be used with kubectl
+            mkdir -p ~/.kube
+            cat > ~/.kube/config << EOF
+            apiVersion: v1
+            kind: Config
+            clusters:
+            - name: sdd-k8s-${{ env.ENVIRONMENT }}
+              cluster:
+                server: https://$CONTROL_PLANE_IP:6443
+                insecure-skip-tls-verify: true
+            contexts:
+            - name: sdd-k8s-${{ env.ENVIRONMENT }}
+              context:
+                cluster: sdd-k8s-${{ env.ENVIRONMENT }}
+                user: admin
+            current-context: sdd-k8s-${{ env.ENVIRONMENT }}
+            users:
+            - name: admin
+              user:
+                insecure-skip-tls-verify: true
+            EOF
+            echo "Kubeconfig generated for cluster at https://$CONTROL_PLANE_IP:6443"
+          else
+            echo "Control plane IP not found, creating empty kubeconfig"
+            mkdir -p ~/.kube
+            touch ~/.kube/config
+          fi
+      
       - name: Initialize Terraform
         id: init
         run: |
@@ -141,14 +186,11 @@ jobs:
             -var-file=terraform.tfvars \
             -out=tfplan
       
-      - name: Apply Terraform
+      - name: Apply Terraform - Applications
         id: apply
         run: |
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
           terraform apply -input=false -auto-approve tfplan
-      
-      # Note: Kubernetes deployment is handled by Terraform module
-      # No manual kubeconfig generation needed
       
       - name: Deploy Applications
         id: deploy
