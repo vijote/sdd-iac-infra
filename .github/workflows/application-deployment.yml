@@ -150,29 +150,29 @@ jobs:
           
           # MySQL Configuration
           mysql_root_password = "${{ env.TF_VAR_mysql_root_password }}"
-          mysql_database = "${{ case(env.ENVIRONMENT, 'prod', 'demo_app', 'demo_app_dev') }}"
+          mysql_database = "${{ case(env.ENVIRONMENT == 'prod', 'demo_app', 'demo_app_dev') }}"
           mysql_user = "demo_user"
           mysql_password = "${{ env.TF_VAR_mysql_password }}"
-          mysql_storage_size = "${{ case(env.ENVIRONMENT, 'prod', '50Gi', '20Gi') }}"
-          mysql_storage_class = "${{ case(env.ENVIRONMENT, 'prod', 'gp3', 'gp2') }}"
+          mysql_storage_size = "${{ case(env.ENVIRONMENT == 'prod', '50Gi', '20Gi') }}"
+          mysql_storage_class = "${{ case(env.ENVIRONMENT == 'prod', 'gp3', 'gp2') }}"
           
           # Container Images
-          frontend_image = "${{ case(env.ENVIRONMENT, 'prod', 'nginx:1.24-alpine', 'nginx:alpine') }}"
-          backend_image = "${{ case(env.ENVIRONMENT, 'prod', 'node:18.17-alpine', 'node:18-alpine') }}"
-          mysql_image = "${{ case(env.ENVIRONMENT, 'prod', 'mysql:8.0.33', 'mysql:8.0') }}"
+          frontend_image = "${{ case(env.ENVIRONMENT == 'prod', 'nginx:1.24-alpine', 'nginx:alpine') }}"
+          backend_image = "${{ case(env.ENVIRONMENT == 'prod', 'node:18.17-alpine', 'node:18-alpine') }}"
+          mysql_image = "${{ case(env.ENVIRONMENT == 'prod', 'mysql:8.0.33', 'mysql:8.0') }}"
           
           # Replicas
-          frontend_replicas = ${{ case(env.ENVIRONMENT, 'prod', 2, 1) }}
-          backend_replicas = ${{ case(env.ENVIRONMENT, 'prod', 2, 1) }}
+          frontend_replicas = ${{ case(env.ENVIRONMENT == 'prod', 2, 1) }}
+          backend_replicas = ${{ case(env.ENVIRONMENT == 'prod', 2, 1) }}
           mysql_replicas = 1
           
           # Resource Limits
-          frontend_cpu_limit = "${{ case(env.ENVIRONMENT, 'prod', '200m', '100m') }}"
-          frontend_memory_limit = "${{ case(env.ENVIRONMENT, 'prod', '256Mi', '128Mi') }}"
-          backend_cpu_limit = "${{ case(env.ENVIRONMENT, 'prod', '400m', '200m') }}"
-          backend_memory_limit = "${{ case(env.ENVIRONMENT, 'prod', '512Mi', '256Mi') }}"
-          mysql_cpu_limit = "${{ case(env.ENVIRONMENT, 'prod', '500m', '300m') }}"
-          mysql_memory_limit = "${{ case(env.ENVIRONMENT, 'prod', '1Gi', '512Mi') }}"
+          frontend_cpu_limit = "${{ case(env.ENVIRONMENT == 'prod', '200m', '100m') }}"
+          frontend_memory_limit = "${{ case(env.ENVIRONMENT == 'prod', '256Mi', '128Mi') }}"
+          backend_cpu_limit = "${{ case(env.ENVIRONMENT == 'prod', '400m', '200m') }}"
+          backend_memory_limit = "${{ case(env.ENVIRONMENT == 'prod', '512Mi', '256Mi') }}"
+          mysql_cpu_limit = "${{ case(env.ENVIRONMENT == 'prod', '500m', '300m') }}"
+          mysql_memory_limit = "${{ case(env.ENVIRONMENT == 'prod', '1Gi', '512Mi') }}"
           
           # JWT Secret
           jwt_secret = "${{ env.TF_VAR_jwt_secret }}"
