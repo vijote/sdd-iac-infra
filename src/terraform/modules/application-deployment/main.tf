@@ -1,16 +1,4 @@
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.20"
-    }
-    kubectl = {
-      source  = "alekc/kubectl"
-      version = "~> 2.0"
-    }
-  }
-}
+# Terraform configuration is in versions.tf
 
 # Configure Kubernetes provider
 provider "kubernetes" {
