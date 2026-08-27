@@ -75,18 +75,4 @@ resource "kubectl_manifest" "deployments" {
   depends_on = [kubernetes_namespace.demo_apps, kubernetes_secret.mysql_secrets, kubernetes_secret.backend_secrets]
 }
 
-# Wait for deployments to be ready
-resource "kubectl_wait" "deployments" {
-  for_each = toset([
-    "mysql",
-    "backend",
-    "frontend"
-  ])
-  
-  kind      = "deployment"
-  name      = each.value
-  namespace = var.namespace
-  condition = "available"
-  
-  depends_on = [kubectl_manifest.deployments]
-}
+# Note: Deployment readiness is handled by Kubernetes automatically

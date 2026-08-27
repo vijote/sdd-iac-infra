@@ -140,11 +140,6 @@ users:
       name: aws
       config:
         clusterID: sdd-k8s-${{ env.ENVIRONMENT }}
-          EOF
-          echo "Kubeconfig generated for cluster: $CLUSTER_ENDPOINT"
-          else
-            echo "No cluster endpoint found, skipping kubeconfig generation"
-          fi
       
       - name: Deploy Applications
         id: deploy

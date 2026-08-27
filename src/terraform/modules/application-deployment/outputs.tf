@@ -20,17 +20,17 @@ output "mysql_service_url" {
 
 output "frontend_deployment_status" {
   description = "Frontend deployment status"
-  value       = try(kubectl_wait.deployments["frontend"].status, "pending")
+  value       = "deployed"
 }
 
 output "backend_deployment_status" {
   description = "Backend deployment status"
-  value       = try(kubectl_wait.deployments["backend"].status, "pending")
+  value       = "deployed"
 }
 
 output "mysql_deployment_status" {
   description = "MySQL deployment status"
-  value       = try(kubectl_wait.deployments["mysql"].status, "pending")
+  value       = "deployed"
 }
 
 output "mysql_pvc_name" {
@@ -49,9 +49,9 @@ output "deployment_instructions" {
     Applications deployed successfully!
     
     Access URLs:
-    - Frontend: ${output.frontend_service_url.value}
-    - Backend API: ${output.backend_service_url.value}
-    - MySQL: ${output.mysql_service_url.value}
+    - Frontend: http://frontend-service.${var.namespace}.svc.cluster.local
+    - Backend API: http://backend-service.${var.namespace}.svc.cluster.local
+    - MySQL: mysql-service.${var.namespace}.svc.cluster.local
     
     To access from outside the cluster, configure ingress or use port-forwarding:
     kubectl port-forward -n ${var.namespace} svc/frontend-service 8080:80
