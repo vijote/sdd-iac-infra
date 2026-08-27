@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: demo-apps
+  labels:
+    app: frontend
+    tier: ui
+    environment: ${environment}
+spec:
+  replicas: ${frontend_replicas}
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        tier: ui
+        environment: ${environment}
+    spec:
+      containers:
+      - name: frontend
+        image: ${frontend_image}
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          limits:
+            cpu: ${frontend_cpu_limit}
+            memory: ${frontend_memory_limit}
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+        # Simple health check
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+          readOnly: true
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: frontend-config
