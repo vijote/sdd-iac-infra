@@ -34,6 +34,11 @@ env:
   TF_VAR_aws_terraform_role_name: ${{ vars.AWS_TERRAFORM_ROLE_NAME }}
   TF_VAR_aws_state_bucket_name: ${{ vars.STATE_BUCKET_NAME }}
   
+  # Application secrets (from repository secrets)
+  TF_VAR_mysql_root_password: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+  TF_VAR_mysql_password: ${{ secrets.MYSQL_PASSWORD }}
+  TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+  
   # Pipeline-Specific
   DEPLOYMENT_ID: deploy-${{ github.run_number }}-${{ github.sha }}
   COMMIT_SHA: ${{ github.sha }}
