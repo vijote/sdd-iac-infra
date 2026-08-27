@@ -103,49 +103,14 @@ jobs:
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
           terraform apply -input=false -auto-approve tfplan
       
-      - name: Generate kubeconfig
-        id: kubeconfig
-        run: |
-          cd src/terraform/environments/${{ env.ENVIRONMENT }}
-          
-          # Get cluster outputs
-          CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint 2>/dev/null || echo "")
-          CONTROL_PLANE_IP=$(terraform output -raw control_plane_public_ip 2>/dev/null || echo "")
-          
-          if [ -n "$CONTROL_PLANE_IP" ]; then
-            CLUSTER_ENDPOINT="https://$CONTROL_PLANE_IP:6443"
-          fi
-          
-          if [ -n "$CLUSTER_ENDPOINT" ]; then
-            # Generate a basic kubeconfig for the cluster
-            mkdir -p ~/.kube
-            cat > ~/.kube/config << EOF
-apiVersion: v1
-kind: Config
-clusters:
-- name: sdd-k8s-${{ env.ENVIRONMENT }}
-  cluster:
-    server: $CLUSTER_ENDPOINT
-    insecure-skip-tls-verify: true
-contexts:
-- name: sdd-k8s-${{ env.ENVIRONMENT }}
-  context:
-    cluster: sdd-k8s-${{ env.ENVIRONMENT }}
-    user: sdd-k8s-${{ env.ENVIRONMENT }}-admin
-current-context: sdd-k8s-${{ env.ENVIRONMENT }}
-users:
-- name: sdd-k8s-${{ env.ENVIRONMENT }}-admin
-  user:
-    auth-provider:
-      name: aws
-      config:
-        clusterID: sdd-k8s-${{ env.ENVIRONMENT }}
+      # Note: Kubernetes deployment is handled by Terraform module
+      # No manual kubeconfig generation needed
       
       - name: Deploy Applications
         id: deploy
         run: |
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
-          
+            
           # Apply application deployment
           terraform apply -input=false -auto-approve -target=module.application_deployment
       
