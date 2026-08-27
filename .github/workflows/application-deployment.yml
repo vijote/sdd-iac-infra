@@ -78,10 +78,10 @@ jobs:
         with:
           terraform_version: ">=1.5"
       
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
         with:
-          version: '>=1.24'
+          version: 'latest'
       
       - name: Initialize Terraform
         id: init
