@@ -171,6 +171,12 @@ jobs:
           # JWT Secret
           jwt_secret = "${{ env.TF_VAR_jwt_secret }}"
           EOF
+
+      - name: Apply Terraform - Infrastructure
+        id: apply-infra
+        run: |
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          terraform apply -input=false -auto-approve -target=module.kubernetes
       
       - name: Plan Terraform
         id: plan
@@ -179,12 +185,6 @@ jobs:
           terraform plan -input=false \
             -var-file=terraform.tfvars \
             -out=tfplan
-
-      - name: Apply Terraform - Infrastructure
-        id: apply-infra
-        run: |
-          cd src/terraform/environments/${{ env.ENVIRONMENT }}
-          terraform apply -input=false -auto-approve -target=module.kubernetes
       
       - name: Apply Terraform - Applications
         id: apply
