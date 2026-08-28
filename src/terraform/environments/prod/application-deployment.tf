@@ -5,11 +5,11 @@ module "application_deployment" {
 
   # Environment configuration
   environment = "prod"
-  
+
   # Cluster connection details - use direct cluster configuration for CI/CD
   cluster_endpoint       = module.kubernetes.cluster_endpoint
-  cluster_ca_certificate = ""  # Will be extracted from kubeconfig or provided via env vars
-  cluster_token          = ""  # Will be provided via environment variables in CI/CD
+  cluster_ca_certificate = "" # Will be extracted from kubeconfig or provided via env vars
+  cluster_token          = "" # Will be provided via environment variables in CI/CD
 
   # MySQL configuration
   mysql_root_password = var.mysql_root_password

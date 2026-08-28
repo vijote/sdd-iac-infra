@@ -5,10 +5,10 @@ module "application_deployment" {
 
   # Environment configuration
   environment = "dev"
-  
+
   # For local development, use kubeconfig
   kubeconfig_path = var.kubeconfig_path
-  
+
   # Cluster connection details (optional - for CI/CD or remote access)
   cluster_endpoint       = try(module.kubernetes.cluster_endpoint, "")
   cluster_ca_certificate = ""
