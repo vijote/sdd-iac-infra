@@ -114,13 +114,19 @@ resource "kubernetes_storage_class" "storage_classes" {
 
   storage_provisioner = "ebs.csi.aws.com"
 
-  parameters = {
-    type       = each.value.type
-    encrypted  = tostring(each.value.encrypted)
-    fsType     = "ext4"
-    iops       = each.value.iops != null ? tostring(each.value.iops) : null
-    throughput = each.value.throughput != null ? tostring(each.value.throughput) : null
-  }
+  parameters = merge(
+    {
+      type      = each.value.type
+      encrypted = tostring(each.value.encrypted)
+      fsType    = "ext4"
+    },
+    contains(["gp3", "io2", "io1"], each.value.type) && each.value.iops != null ? {
+      iops = tostring(each.value.iops)
+    } : {},
+    each.value.type == "gp3" && each.value.throughput != null ? {
+      throughput = tostring(each.value.throughput)
+    } : {}
+  )
 
   allow_volume_expansion = each.value.allow_expansion
   reclaim_policy         = each.value.reclaim_policy
