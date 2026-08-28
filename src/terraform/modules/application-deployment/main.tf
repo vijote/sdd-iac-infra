@@ -2,24 +2,24 @@
 
 # Configure Kubernetes provider
 provider "kubernetes" {
-  # Only use config_path if cluster_endpoint is not provided (for local dev)
-  config_path = var.cluster_endpoint != "" ? null : var.kubeconfig_path
+  # Use kubeconfig by default, switch to direct cluster config only when all required fields are provided
+  config_path = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? null : var.kubeconfig_path
 
-  # Use direct cluster configuration if provided
-  host                   = var.cluster_endpoint != "" ? var.cluster_endpoint : null
-  cluster_ca_certificate = var.cluster_ca_certificate != "" ? var.cluster_ca_certificate : null
-  token                  = var.cluster_token != "" ? var.cluster_token : null
+  # Use direct cluster configuration only when all required fields are available
+  host                   = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_endpoint : null
+  cluster_ca_certificate = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_ca_certificate : null
+  token                  = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_token : null
 }
 
 # Configure kubectl provider
 provider "kubectl" {
-  # Only use config_path if cluster_endpoint is not provided (for local dev)
-  config_path = var.cluster_endpoint != "" ? null : var.kubeconfig_path
+  # Use kubeconfig by default, switch to direct cluster config only when all required fields are provided
+  config_path = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? null : var.kubeconfig_path
 
-  # Use direct cluster configuration if provided
-  host                   = var.cluster_endpoint != "" ? var.cluster_endpoint : null
-  cluster_ca_certificate = var.cluster_ca_certificate != "" ? var.cluster_ca_certificate : null
-  token                  = var.cluster_token != "" ? var.cluster_token : null
+  # Use direct cluster configuration only when all required fields are available
+  host                   = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_endpoint : null
+  cluster_ca_certificate = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_ca_certificate : null
+  token                  = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_token : null
 }
 
 # Create namespace for demo applications
