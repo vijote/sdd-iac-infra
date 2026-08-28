@@ -4,8 +4,15 @@ module "application_deployment" {
   source = "../../modules/application-deployment"
 
   # Environment configuration
-  environment     = "dev"
+  environment = "dev"
+  
+  # For local development, use kubeconfig
   kubeconfig_path = var.kubeconfig_path
+  
+  # Cluster connection details (optional - for CI/CD or remote access)
+  cluster_endpoint       = try(module.kubernetes.cluster_endpoint, "")
+  cluster_ca_certificate = ""
+  cluster_token          = ""
 
   # MySQL configuration
   mysql_root_password = var.mysql_root_password
