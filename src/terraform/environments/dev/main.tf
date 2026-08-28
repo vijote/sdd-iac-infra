@@ -20,27 +20,19 @@ terraform {
 
 # Configure Kubernetes provider
 provider "kubernetes" {
-  # Check if we have all required fields for direct cluster configuration
-  # Also check if kubeconfig file exists to avoid errors in CI/CD
-  config_path = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? null : (fileexists(var.kubeconfig_path) ? var.kubeconfig_path : null)
-
-  # Use direct cluster configuration only when all required fields are available and non-empty
-  host                   = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_endpoint : null
-  cluster_ca_certificate = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_ca_certificate : null
-  token                  = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_token : null
+  # CI/CD environment - use direct cluster configuration or environment variables
+  host                   = var.cluster_endpoint != "" ? var.cluster_endpoint : null
+  cluster_ca_certificate = var.cluster_ca_certificate != "" ? var.cluster_ca_certificate : null
+  token                  = var.cluster_token != "" ? var.cluster_token : null
 }
 
 # Configure Helm provider
 provider "helm" {
   kubernetes {
-    # Check if we have all required fields for direct cluster configuration
-    # Also check if kubeconfig file exists to avoid errors in CI/CD
-    config_path = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? null : (fileexists(var.kubeconfig_path) ? var.kubeconfig_path : null)
-
-    # Use direct cluster configuration only when all required fields are available and non-empty
-    host                   = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_endpoint : null
-    cluster_ca_certificate = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_ca_certificate : null
-    token                  = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_token : null
+    # CI/CD environment - use direct cluster configuration or environment variables
+    host                   = var.cluster_endpoint != "" ? var.cluster_endpoint : null
+    cluster_ca_certificate = var.cluster_ca_certificate != "" ? var.cluster_ca_certificate : null
+    token                  = var.cluster_token != "" ? var.cluster_token : null
   }
 }
 
