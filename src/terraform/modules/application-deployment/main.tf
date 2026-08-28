@@ -2,21 +2,17 @@
 
 # Configure Kubernetes provider
 provider "kubernetes" {
-  # Use kubeconfig for local development, direct cluster config for CI/CD
-  config_path            = var.cluster_token != "" ? null : var.kubeconfig_path
-  host                   = var.cluster_endpoint != "" ? var.cluster_endpoint : null
-  cluster_ca_certificate = var.cluster_ca_certificate != "" ? var.cluster_ca_certificate : null
-  token                  = var.cluster_token != "" ? var.cluster_token : null
+  host                   = var.cluster_endpoint
+  cluster_ca_certificate = var.cluster_ca_certificate
+  token                  = var.cluster_token
 }
 
 # Configure kubectl provider
 provider "kubectl" {
-  load_config_file = false
-  # Use kubeconfig for local development, direct cluster config for CI/CD
-  config_path            = var.cluster_token != "" ? null : var.kubeconfig_path
-  host                   = var.cluster_endpoint != "" ? var.cluster_endpoint : null
-  cluster_ca_certificate = var.cluster_ca_certificate != "" ? var.cluster_ca_certificate : null
-  token                  = var.cluster_token != "" ? var.cluster_token : null
+  load_config_file       = false
+  host                   = var.cluster_endpoint
+  cluster_ca_certificate = var.cluster_ca_certificate
+  token                  = var.cluster_token
 }
 
 # Create namespace for demo applications

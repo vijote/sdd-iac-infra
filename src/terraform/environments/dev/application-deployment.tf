@@ -6,13 +6,10 @@ module "application_deployment" {
   # Environment configuration
   environment = "dev"
 
-  # For local development, use kubeconfig
-  kubeconfig_path = var.kubeconfig_path
-
-  # Cluster connection details (optional - for CI/CD or remote access)
-  cluster_endpoint       = try(module.kubernetes.cluster_endpoint, null)
-  cluster_ca_certificate = null
-  cluster_token          = null
+  # Cluster connection details (required for CI/CD)
+  cluster_endpoint       = try(module.kubernetes.cluster_endpoint, "")
+  cluster_ca_certificate = try(module.kubernetes.cluster_ca_certificate, "")
+  cluster_token          = try(module.kubernetes.cluster_token, "")
 
   # MySQL configuration
   mysql_root_password = var.mysql_root_password
