@@ -3,7 +3,7 @@
 # Configure Kubernetes provider
 provider "kubernetes" {
   host                   = var.cluster_endpoint
-  cluster_ca_certificate = base64decode(var.cluster_ca_certificate)
+  cluster_ca_certificate = var.cluster_ca_certificate
   token                  = var.cluster_token
 }
 
@@ -11,7 +11,7 @@ provider "kubernetes" {
 provider "kubectl" {
   load_config_file       = false
   host                   = var.cluster_endpoint
-  cluster_ca_certificate = base64decode(var.cluster_ca_certificate)
+  cluster_ca_certificate = var.cluster_ca_certificate
   token                  = var.cluster_token
 }
 
