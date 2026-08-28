@@ -11,6 +11,7 @@ provider "kubernetes" {
 
 # Configure kubectl provider
 provider "kubectl" {
+  load_config_file = false
   # Use kubeconfig for local development, direct cluster config for CI/CD
   config_path            = var.cluster_token != "" ? null : var.kubeconfig_path
   host                   = var.cluster_endpoint != "" ? var.cluster_endpoint : null
