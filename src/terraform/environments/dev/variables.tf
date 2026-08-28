@@ -7,6 +7,25 @@ variable "kubeconfig_path" {
   default     = "~/.kube/config"
 }
 
+variable "cluster_endpoint" {
+  description = "Kubernetes cluster endpoint"
+  type        = string
+  default     = ""
+}
+
+variable "cluster_ca_certificate" {
+  description = "Kubernetes cluster CA certificate"
+  type        = string
+  default     = ""
+}
+
+variable "cluster_token" {
+  description = "Kubernetes authentication token"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "domain_name" {
   description = "Base domain for SSL certificates"
   type        = string

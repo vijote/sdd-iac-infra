@@ -18,15 +18,27 @@ terraform {
   }
 }
 
-# Configure Kubernetes provider for kubeadm using kubeconfig
+# Configure Kubernetes provider
 provider "kubernetes" {
-  config_path = var.kubeconfig_path
+  # Use kubeconfig by default, switch to direct cluster config only when all required fields are provided
+  config_path = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? null : var.kubeconfig_path
+
+  # Use direct cluster configuration only when all required fields are available
+  host                   = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_endpoint : null
+  cluster_ca_certificate = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_ca_certificate : null
+  token                  = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_token : null
 }
 
-# Configure Helm provider for kubeadm
+# Configure Helm provider
 provider "helm" {
   kubernetes {
-    config_path = var.kubeconfig_path
+    # Use kubeconfig by default, switch to direct cluster config only when all required fields are provided
+    config_path = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? null : var.kubeconfig_path
+
+    # Use direct cluster configuration only when all required fields are available
+    host                   = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_endpoint : null
+    cluster_ca_certificate = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_ca_certificate : null
+    token                  = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_token : null
   }
 }
 
