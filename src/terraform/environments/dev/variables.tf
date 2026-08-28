@@ -10,19 +10,19 @@ variable "kubeconfig_path" {
 variable "cluster_endpoint" {
   description = "Kubernetes cluster endpoint"
   type        = string
-  default     = ""
+  default     = null
 }
 
 variable "cluster_ca_certificate" {
   description = "Kubernetes cluster CA certificate"
   type        = string
-  default     = ""
+  default     = null
 }
 
 variable "cluster_token" {
   description = "Kubernetes authentication token"
   type        = string
-  default     = ""
+  default     = null
   sensitive   = true
 }
 

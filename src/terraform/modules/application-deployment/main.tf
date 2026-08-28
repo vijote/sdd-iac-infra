@@ -3,23 +3,23 @@
 # Configure Kubernetes provider
 provider "kubernetes" {
   # Use kubeconfig by default, switch to direct cluster config only when all required fields are provided
-  config_path = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? null : var.kubeconfig_path
+  config_path = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? null : var.kubeconfig_path
 
   # Use direct cluster configuration only when all required fields are available
-  host                   = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_endpoint : null
-  cluster_ca_certificate = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_ca_certificate : null
-  token                  = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_token : null
+  host                   = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? var.cluster_endpoint : null
+  cluster_ca_certificate = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? var.cluster_ca_certificate : null
+  token                  = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? var.cluster_token : null
 }
 
 # Configure kubectl provider
 provider "kubectl" {
   # Use kubeconfig by default, switch to direct cluster config only when all required fields are provided
-  config_path = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? null : var.kubeconfig_path
+  config_path = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? null : var.kubeconfig_path
 
   # Use direct cluster configuration only when all required fields are available
-  host                   = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_endpoint : null
-  cluster_ca_certificate = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_ca_certificate : null
-  token                  = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_token : null
+  host                   = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? var.cluster_endpoint : null
+  cluster_ca_certificate = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? var.cluster_ca_certificate : null
+  token                  = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? var.cluster_token : null
 }
 
 # Create namespace for demo applications
