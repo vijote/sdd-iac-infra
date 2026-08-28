@@ -2,10 +2,8 @@
 
 # Configure Kubernetes provider
 provider "kubernetes" {
-  # CI/CD environment - explicitly disable config_path to prevent kubeconfig lookup
-  config_path = null
-
-  # Use direct cluster configuration or environment variables
+  # Use kubeconfig for local development, direct cluster config for CI/CD
+  config_path            = var.cluster_token != "" ? null : var.kubeconfig_path
   host                   = var.cluster_endpoint != "" ? var.cluster_endpoint : null
   cluster_ca_certificate = var.cluster_ca_certificate != "" ? var.cluster_ca_certificate : null
   token                  = var.cluster_token != "" ? var.cluster_token : null
@@ -13,10 +11,8 @@ provider "kubernetes" {
 
 # Configure kubectl provider
 provider "kubectl" {
-  # CI/CD environment - explicitly disable config_path to prevent kubeconfig lookup
-  config_path = null
-
-  # Use direct cluster configuration or environment variables
+  # Use kubeconfig for local development, direct cluster config for CI/CD
+  config_path            = var.cluster_token != "" ? null : var.kubeconfig_path
   host                   = var.cluster_endpoint != "" ? var.cluster_endpoint : null
   cluster_ca_certificate = var.cluster_ca_certificate != "" ? var.cluster_ca_certificate : null
   token                  = var.cluster_token != "" ? var.cluster_token : null
