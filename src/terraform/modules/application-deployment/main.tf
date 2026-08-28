@@ -2,24 +2,26 @@
 
 # Configure Kubernetes provider
 provider "kubernetes" {
-  # Use kubeconfig by default, switch to direct cluster config only when all required fields are provided
-  config_path = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? null : var.kubeconfig_path
+  # Check if we have all required fields for direct cluster configuration
+  # Also check if kubeconfig file exists to avoid errors in CI/CD
+  config_path = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? null : (fileexists(var.kubeconfig_path) ? var.kubeconfig_path : null)
 
-  # Use direct cluster configuration only when all required fields are available
-  host                   = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? var.cluster_endpoint : null
-  cluster_ca_certificate = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? var.cluster_ca_certificate : null
-  token                  = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? var.cluster_token : null
+  # Use direct cluster configuration only when all required fields are available and non-empty
+  host                   = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_endpoint : null
+  cluster_ca_certificate = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_ca_certificate : null
+  token                  = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_token : null
 }
 
 # Configure kubectl provider
 provider "kubectl" {
-  # Use kubeconfig by default, switch to direct cluster config only when all required fields are provided
-  config_path = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? null : var.kubeconfig_path
+  # Check if we have all required fields for direct cluster configuration
+  # Also check if kubeconfig file exists to avoid errors in CI/CD
+  config_path = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? null : (fileexists(var.kubeconfig_path) ? var.kubeconfig_path : null)
 
-  # Use direct cluster configuration only when all required fields are available
-  host                   = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? var.cluster_endpoint : null
-  cluster_ca_certificate = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? var.cluster_ca_certificate : null
-  token                  = (var.cluster_endpoint != null && var.cluster_ca_certificate != null && var.cluster_token != null) ? var.cluster_token : null
+  # Use direct cluster configuration only when all required fields are available and non-empty
+  host                   = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_endpoint : null
+  cluster_ca_certificate = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_ca_certificate : null
+  token                  = (var.cluster_endpoint != "" && var.cluster_ca_certificate != "" && var.cluster_token != "") ? var.cluster_token : null
 }
 
 # Create namespace for demo applications
