@@ -27,9 +27,9 @@ output "nginx_ingress_namespace" {
 output "nginx_ingress_service" {
   description = "NGINX Ingress controller service details"
   value = {
-    name = helm_release.nginx_ingress.name
+    name      = helm_release.nginx_ingress.name
     namespace = helm_release.nginx_ingress.namespace
-    status = helm_release.nginx_ingress.status
+    status    = helm_release.nginx_ingress.status
   }
 }
 
@@ -47,7 +47,7 @@ output "cert_manager_issuers" {
 
 output "storage_classes" {
   description = "Map of created storage classes"
-  value       = {
+  value = {
     for k, v in kubernetes_storage_class.storage_classes : k => v.metadata[0].name
   }
   depends_on = [
@@ -59,13 +59,13 @@ output "storage_class_details" {
   description = "Detailed information about storage classes"
   value = {
     for k, v in kubernetes_storage_class.storage_classes : k => {
-      name              = v.metadata[0].name
-      provisioner       = v.storage_provisioner
-      parameters        = v.parameters
-      reclaim_policy    = v.reclaim_policy
-      allow_expansion   = v.allow_volume_expansion
+      name                = v.metadata[0].name
+      provisioner         = v.storage_provisioner
+      parameters          = v.parameters
+      reclaim_policy      = v.reclaim_policy
+      allow_expansion     = v.allow_volume_expansion
       volume_binding_mode = v.volume_binding_mode
-      is_default        = lookup(v.metadata[0].labels, "storageclass.kubernetes.io/is-default-class", "false") == "true"
+      is_default          = lookup(v.metadata[0].labels, "storageclass.kubernetes.io/is-default-class", "false") == "true"
     }
   }
   depends_on = [
@@ -92,11 +92,11 @@ output "domain_name" {
 output "application_deployment_config" {
   description = "Configuration for application-deployment module integration"
   value = {
-    ingress_class = "nginx"
-    cert_manager_issuer = var.cert_manager_email != null ? "letsencrypt-prod" : null
+    ingress_class         = "nginx"
+    cert_manager_issuer   = var.cert_manager_email != null ? "letsencrypt-prod" : null
     default_storage_class = "gp3"
-    namespace = var.namespace
-    domain = var.domain_name
+    namespace             = var.namespace
+    domain                = var.domain_name
   }
   depends_on = [
     helm_release.nginx_ingress,
@@ -109,7 +109,7 @@ output "provider_config" {
   value = {
     host                   = var.cluster_endpoint
     cluster_ca_certificate = var.cluster_ca_certificate
-    cluster_name          = var.cluster_name
+    cluster_name           = var.cluster_name
   }
   sensitive = true
 }

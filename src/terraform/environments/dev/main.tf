@@ -67,27 +67,27 @@ module "kubernetes" {
 # Application infrastructure module
 module "application_infrastructure" {
   source = "../../modules/application-infrastructure"
-  
+
   # Pass outputs from kubernetes module
-  cluster_endpoint        = module.kubernetes.cluster_endpoint
-  cluster_ca_certificate = ""  # Will be extracted from kubeconfig
+  cluster_endpoint       = module.kubernetes.cluster_endpoint
+  cluster_ca_certificate = "" # Will be extracted from kubeconfig
   cluster_name           = module.kubernetes.cluster_name
-  
+
   # Other required variables
-  domain_name    = var.domain_name
+  domain_name     = var.domain_name
   kubeconfig_path = var.kubeconfig_path
-  namespace      = var.namespace
-  aws_region     = var.aws_region
-  
+  namespace       = var.namespace
+  aws_region      = var.aws_region
+
   # Storage classes configuration
   storage_classes = var.storage_classes
-  
+
   # Cert-manager configuration
   cert_manager_email = var.cert_manager_email
-  
+
   # Providers
   providers = {
     kubernetes = kubernetes
-    helm = helm
+    helm       = helm
   }
 }
