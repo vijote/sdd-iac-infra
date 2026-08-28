@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: application-infrastructure
+  labels:
+    name: application-infrastructure
+    managed-by: terraform
+    project: sdd-infra
+    component: application-infrastructure
+    environment: production
+  annotations:
+    description: "Namespace for application infrastructure components including ingress, storage, and certificate management"

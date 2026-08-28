@@ -1,0 +1,150 @@
+---
+# ServiceMonitor for NGINX Ingress Controller
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nginx-ingress-controller-metrics
+  namespace: application-infrastructure
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/component: monitoring
+    release: prometheus
+  annotations:
+    description: "ServiceMonitor for NGINX Ingress Controller metrics"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ingress-nginx
+      app.kubernetes.io/component: controller
+  namespaceSelector:
+    matchNames:
+      - application-infrastructure
+  endpoints:
+  - port: prometheus
+    interval: 30s
+    path: /metrics
+    honorLabels: true
+
+---
+# ServiceMonitor for cert-manager
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cert-manager-metrics
+  namespace: application-infrastructure
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: monitoring
+    release: prometheus
+  annotations:
+    description: "ServiceMonitor for cert-manager metrics"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cert-manager
+      app.kubernetes.io/component: controller
+  namespaceSelector:
+    matchNames:
+      - application-infrastructure
+  endpoints:
+  - port: metrics
+    interval: 60s
+    path: /metrics
+    honorLabels: true
+
+---
+# ServiceMonitor for EBS CSI Driver
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ebs-csi-driver-metrics
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: aws-ebs-csi-driver
+    app.kubernetes.io/component: monitoring
+    release: prometheus
+  annotations:
+    description: "ServiceMonitor for EBS CSI Driver metrics"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aws-ebs-csi-driver
+      app.kubernetes.io/component: controller
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+    honorLabels: true
+
+---
+# PrometheusRule for NGINX Ingress Controller Alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nginx-ingress-alerts
+  namespace: application-infrastructure
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/component: monitoring
+    release: prometheus
+  annotations:
+    description: "Alerting rules for NGINX Ingress Controller"
+spec:
+  groups:
+  - name: nginx-ingress.rules
+    rules:
+    - alert: NGINXIngressControllerDown
+      expr: up{job="nginx-ingress-controller"} == 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "NGINX Ingress Controller is down"
+        description: "NGINX Ingress Controller has been down for more than 5 minutes."
+    
+    - alert: NGINXIngressHighErrorRate
+      expr: rate(nginx_ingress_controller_requests{status=~"5.."}[5m]) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High error rate in NGINX Ingress"
+        description: "NGINX Ingress error rate is {{ $value }} errors per second."
+
+---
+# PrometheusRule for cert-manager Alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cert-manager-alerts
+  namespace: application-infrastructure
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: monitoring
+    release: prometheus
+  annotations:
+    description: "Alerting rules for cert-manager"
+spec:
+  groups:
+  - name: cert-manager.rules
+    rules:
+    - alert: CertManagerControllerDown
+      expr: up{job="cert-manager"} == 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "cert-manager controller is down"
+        description: "cert-manager controller has been down for more than 5 minutes."
+    
+    - alert: CertManagerCertificateExpiringSoon
+      expr: cert_manager_certificate_expiration_timestamp_seconds - time() < 86400
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        summary: "Certificate expiring soon"
+        description: "Certificate {{ $labels.name }} is expiring in less than 24 hours."

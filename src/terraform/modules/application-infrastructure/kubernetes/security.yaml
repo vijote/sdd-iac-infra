@@ -1,0 +1,206 @@
+---
+# Network Policy for application-infrastructure namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: application-infrastructure-network-policy
+  namespace: application-infrastructure
+  labels:
+    app.kubernetes.io/name: application-infrastructure
+    app.kubernetes.io/component: security
+  annotations:
+    description: "Network policy controlling ingress and egress traffic for infrastructure components"
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  
+  # Allow ingress from same namespace and ingress controller
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: application-infrastructure
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ingress-nginx
+  
+  # Allow egress to DNS, Kubernetes API, and external services
+  egress:
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+  
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: TCP
+      port: 443
+  
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: application-infrastructure
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 9443
+
+---
+# Service Account for NGINX Ingress Controller
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nginx-ingress-serviceaccount
+  namespace: application-infrastructure
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/component: controller
+  annotations:
+    description: "Service account for NGINX Ingress Controller with minimal permissions"
+
+---
+# Role for NGINX Ingress Controller
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nginx-ingress-role
+  namespace: application-infrastructure
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/component: rbac
+  annotations:
+    description: "Role with minimal permissions for NGINX Ingress Controller"
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "endpoints", "persistentvolumeclaims", "pods", "replicationcontrollers", "secrets", "services"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions", "networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions", "networking.k8s.io"]
+  resources: ["ingresses/status"]
+  verbs: ["update"]
+
+---
+# RoleBinding for NGINX Ingress Controller
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nginx-ingress-rolebinding
+  namespace: application-infrastructure
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/component: rbac
+  annotations:
+    description: "Role binding for NGINX Ingress Controller service account"
+subjects:
+- kind: ServiceAccount
+  name: nginx-ingress-serviceaccount
+  namespace: application-infrastructure
+roleRef:
+  kind: Role
+  name: nginx-ingress-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Service Account for cert-manager
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cert-manager
+  namespace: application-infrastructure
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: controller
+  annotations:
+    description: "Service account for cert-manager with minimal permissions"
+
+---
+# ClusterRole for cert-manager
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cert-manager-controller
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: rbac
+  annotations:
+    description: "ClusterRole with minimal permissions for cert-manager"
+rules:
+- apiGroups: ["cert-manager.io"]
+  resources: ["certificates", "certificaterequests", "issuers", "clusterissuers"]
+  verbs: ["get", "list", "watch", "create", "update", "delete"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list", "watch", "create", "update", "delete"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+
+---
+# ClusterRoleBinding for cert-manager
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cert-manager-controller
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: rbac
+  annotations:
+    description: "ClusterRole binding for cert-manager service account"
+subjects:
+- kind: ServiceAccount
+  name: cert-manager
+  namespace: application-infrastructure
+roleRef:
+  kind: ClusterRole
+  name: cert-manager-controller
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Pod Security Policy for infrastructure components
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: application-infrastructure-psp
+  labels:
+    app.kubernetes.io/name: application-infrastructure
+    app.kubernetes.io/component: security
+  annotations:
+    description: "Pod security policy for infrastructure components"
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+  - ALL
+  volumes:
+  - 'configMap'
+  - 'emptyDir'
+  - 'projected'
+  - 'secret'
+  - 'downwardAPI'
+  - 'persistentVolumeClaim'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  readOnlyRootFilesystem: false

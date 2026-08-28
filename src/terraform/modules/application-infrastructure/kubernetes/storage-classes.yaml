@@ -1,0 +1,108 @@
+---
+# Default Storage Classes for EBS CSI Driver
+# These will be created as Kubernetes resources via Terraform
+
+# gp3 Storage Class (Default)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+  labels:
+    app.kubernetes.io/name: aws-ebs-csi-driver
+    app.kubernetes.io/component: storageclass
+    storageclass.kubernetes.io/is-default-class: "true"
+  annotations:
+    description: "General purpose SSD storage class (default)"
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  iops: "3000"
+  throughput: "125"
+  encrypted: "true"
+  fsType: ext4
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+
+---
+# io2 Storage Class (High Performance)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: io2
+  labels:
+    app.kubernetes.io/name: aws-ebs-csi-driver
+    app.kubernetes.io/component: storageclass
+  annotations:
+    description: "High performance SSD storage for databases"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: io2
+  iops: "10000"
+  encrypted: "true"
+  fsType: ext4
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+
+---
+# io1 Storage Class (Legacy High Performance)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: io1
+  labels:
+    app.kubernetes.io/name: aws-ebs-csi-driver
+    app.kubernetes.io/component: storageclass
+  annotations:
+    description: "Legacy high performance SSD storage"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: io1
+  iops: "5000"
+  encrypted: "true"
+  fsType: ext4
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+
+---
+# sc1 Storage Class (Low Cost HDD)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: sc1
+  labels:
+    app.kubernetes.io/name: aws-ebs-csi-driver
+    app.kubernetes.io/component: storageclass
+  annotations:
+    description: "Low cost HDD storage for infrequently accessed data"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: sc1
+  encrypted: "true"
+  fsType: ext4
+allowVolumeExpansion: false
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+
+---
+# st1 Storage Class (Throughput Optimized HDD)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: st1
+  labels:
+    app.kubernetes.io/name: aws-ebs-csi-driver
+    app.kubernetes.io/component: storageclass
+  annotations:
+    description: "Throughput optimized HDD storage for big data"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: st1
+  encrypted: "true"
+  fsType: ext4
+allowVolumeExpansion: false
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer

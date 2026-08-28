@@ -27,6 +27,8 @@ env:
   TF_VAR_aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
   TF_VAR_aws_terraform_role_name: ${{ vars.AWS_TERRAFORM_ROLE_NAME }}
   TF_VAR_aws_state_bucket_name: ${{ vars.STATE_BUCKET_NAME }}
+  # Kubeadm-specific variables
+  TF_VAR_kubeconfig_path: ${{ vars.TF_VAR_kubeconfig_path || '~/.kube/config' }}
 
 jobs:
   terraform-apply:
@@ -55,6 +57,27 @@ jobs:
         with:
           terraform_version: ">= 1.0"
           terraform_wrapper: false
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+
+      - name: Configure kubeconfig
+        run: |
+          # Create kubeconfig directory
+          mkdir -p ~/.kube
+          
+          # If kubeconfig content is provided as a secret, write it
+          if [ -n "${{ secrets.KUBECONFIG_CONTENT }}" ]; then
+            echo "${{ secrets.KUBECONFIG_CONTENT }}" | base64 -d > ~/.kube/config
+          fi
+          
+          # Set proper permissions
+          chmod 600 ~/.kube/config
+          
+          # Verify kubectl can connect to cluster
+          kubectl cluster-info
 
       - name: Terraform Init
         id: init
