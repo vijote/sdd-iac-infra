@@ -83,5 +83,48 @@ jobs:
           TF_VAR_mysql_password: ${{ secrets.MYSQL_PASSWORD }}
           TF_VAR_mysql_root_password: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         id: plan
-        run: terraform plan -input=false -no-color -compact -out=tfplan
+        run: |
+          terraform plan -input=false -no-color -out=tfplan
+          terraform show -json tfplan > tfplan.json
+        working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
+
+      - name: Plan Summary
+        if: always()
+        run: |
+          if [ -f tfplan.json ]; then
+            echo "## 📋 Terraform Plan Summary" >> $GITHUB_STEP_SUMMARY
+            
+            # Get plan summary
+            SUMMARY=$(jq -r '.planned_values.root_module.resources | length' tfplan.json)
+            CHANGES=$(jq -r '.resource_changes | length' tfplan.json)
+            
+            if [ "$CHANGES" -eq 0 ]; then
+              echo "✅ **No changes** - Your infrastructure matches the configuration" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "📊 **Changes to make:** $CHANGES resources" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              
+              # Count change types
+              CREATE=$(jq '[.resource_changes[] | select(.change.actions[] == "create")] | length' tfplan.json)
+              UPDATE=$(jq '[.resource_changes[] | select(.change.actions[] == "update")] | length' tfplan.json)
+              DELETE=$(jq '[.resource_changes[] | select(.change.actions[] == "delete")] | length' tfplan.json)
+              
+              echo "| Action | Count |" >> $GITHUB_STEP_SUMMARY
+              echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+              echo "| 🟢 Create | $CREATE |" >> $GITHUB_STEP_SUMMARY
+              echo "| 🔄 Update | $UPDATE |" >> $GITHUB_STEP_SUMMARY
+              echo "| 🔴 Delete | $DELETE |" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              
+              # Show top 10 resources being changed
+              echo "### 📝 Resources being changed:" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              jq -r '.resource_changes[] | "\(.change.actions[0]): \(.type) (\(.name))"' tfplan.json | head -10 >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              
+              if [ "$CHANGES" -gt 10 ]; then
+                echo "... and $((CHANGES - 10)) more resources" >> $GITHUB_STEP_SUMMARY
+              fi
+            fi
+          fi
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
