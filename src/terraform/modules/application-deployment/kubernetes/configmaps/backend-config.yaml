@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: demo-apps
+  labels:
+    app: backend
+    tier: api
+    environment: ${environment}
+data:
+  database-name: "${mysql_database}"
+  database-user: "${mysql_user}"
+  api-config.js: |
+    module.exports = {
+      port: process.env.PORT || 3000,
+      database: {
+        host: process.env.DB_HOST || 'mysql-service',
+        port: process.env.DB_PORT || 3306,
+        name: process.env.DB_NAME || 'demo_app',
+        user: process.env.DB_USER || 'demo_user',
+        password: process.env.DB_PASSWORD || '',
+        ssl: process.env.NODE_ENV === 'prod' ? true : false,
+        connectionLimit: 10,
+        acquireTimeout: 60000,
+        timeout: 60000
+      },
+      cors: {
+        origin: process.env.NODE_ENV === 'prod' ? 
+          ['https://demo-apps.local'] : 
+          ['http://localhost:3000', 'http://localhost:8080'],
+        credentials: true
+      },
+      logging: {
+        level: process.env.NODE_ENV === 'prod' ? 'info' : 'debug'
+      }
+    };

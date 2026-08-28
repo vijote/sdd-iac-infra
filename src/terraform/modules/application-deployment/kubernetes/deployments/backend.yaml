@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: demo-apps
+  labels:
+    app: backend
+    tier: api
+    environment: ${environment}
+spec:
+  replicas: ${backend_replicas}
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        tier: api
+        environment: ${environment}
+    spec:
+      containers:
+      - name: backend
+        image: ${backend_image}
+        env:
+        - name: NODE_ENV
+          value: "${environment}"
+        - name: PORT
+          value: "3000"
+        - name: DB_HOST
+          value: "mysql-service"
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: database-name
+        - name: DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: database-user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: database-password
+        ports:
+        - containerPort: 3000
+          name: http
+        resources:
+          limits:
+            cpu: ${backend_cpu_limit}
+            memory: ${backend_memory_limit}
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+        # Simple health check
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5

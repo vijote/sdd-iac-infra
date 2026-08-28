@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo-apps
+  labels:
+    name: demo-apps
+    environment: ${environment}
+    managed-by: terraform
+    project: sdd-infra
+    spec: 005-application-deployment
+  annotations:
+    description: "Namespace for demo applications deployment"

@@ -30,6 +30,11 @@ env:
   # Kubeadm-specific variables
   TF_VAR_kubeconfig_path: ${{ vars.TF_VAR_kubeconfig_path || '~/.kube/config' }}
 
+  # Application secrets (from repository secrets)
+  TF_VAR_mysql_root_password: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+  TF_VAR_mysql_password: ${{ secrets.MYSQL_PASSWORD }}
+  TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+
 jobs:
   terraform-apply:
     name: "Terraform Apply"

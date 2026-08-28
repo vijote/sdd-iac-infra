@@ -1,3 +1,4 @@
+
 # Variables for development environment
 
 variable "kubeconfig_path" {
