@@ -96,7 +96,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -input=false -no-color -out=tfplan
+        run: terraform plan -input=false -no-color -compact -out=tfplan
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
 
 

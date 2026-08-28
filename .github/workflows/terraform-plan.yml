@@ -83,5 +83,5 @@ jobs:
           TF_VAR_mysql_password: ${{ secrets.MYSQL_PASSWORD }}
           TF_VAR_mysql_root_password: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         id: plan
-        run: terraform plan -input=false -no-color -out=tfplan
+        run: terraform plan -input=false -no-color -compact -out=tfplan
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}

@@ -86,7 +86,7 @@ jobs:
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
           
           # Generate destroy plan
-          terraform plan -destroy -out=destroy.plan
+          terraform plan -destroy -compact -out=destroy.plan
           
           # Show plan output
           terraform show -json destroy.plan > destroy_plan.json

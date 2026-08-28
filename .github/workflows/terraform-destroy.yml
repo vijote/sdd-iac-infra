@@ -75,7 +75,7 @@ jobs:
 
       - name: Terraform Plan (Destroy)
         id: plan
-        run: terraform plan -input=false -no-color -destroy -out=destroy-plan
+        run: terraform plan -input=false -no-color -compact -destroy -out=destroy-plan
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
 
 

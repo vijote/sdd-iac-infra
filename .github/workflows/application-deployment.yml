@@ -182,7 +182,7 @@ jobs:
         id: plan
         run: |
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
-          terraform plan -input=false \
+          terraform plan -input=false -compact \
             -var-file=terraform.tfvars \
             -out=tfplan
       
