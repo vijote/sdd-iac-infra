@@ -35,7 +35,7 @@ variable "control_plane_instance_type" {
 variable "worker_instance_type" {
   description = "EC2 instance type for worker nodes"
   type        = string
-  default     = "t2.micro"
+  default     = "t2.medium"
 }
 
 variable "worker_count" {
