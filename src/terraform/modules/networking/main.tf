@@ -4,6 +4,10 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = var.enable_dns_hostnames
   enable_dns_support   = var.enable_dns_support
 
+  timeouts {
+    delete = "15m" # Cancela el intento de eliminación si toma más de 15 minutos
+  }
+
   tags = local.vpc_tags
 }
 
