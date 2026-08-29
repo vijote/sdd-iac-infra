@@ -72,25 +72,6 @@ jobs:
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
           terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}"
           
-      - name: Terraform Plan (Destroy)
-        id: plan
-        run: |
-          cd src/terraform/environments/${{ env.ENVIRONMENT }}
-          
-          # Generate destroy plan
-          terraform plan -destroy -out=destroy.plan
-          
-          # Show plan output
-          terraform show -json destroy.plan > destroy_plan.json
-          
-          # Create summary
-          echo "## 📋 Destruction Plan" >> $GITHUB_STEP_SUMMARY
-          echo "Environment: ${{ env.ENVIRONMENT }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          terraform show destroy.plan >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          
       - name: Terraform Destroy
         id: destroy
         run: |
