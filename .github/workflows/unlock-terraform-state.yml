@@ -13,6 +13,9 @@ permissions:
 
 env:
   STATE_BUCKET_NAME: ${{ vars.STATE_BUCKET_NAME }}
+  AWS_REGION: us-east-1
+  AWS_BOOTSTRAP_ROLE: ${{ vars.AWS_BOOTSTRAP_ROLE }}
+  AWS_TERRAFORM_ROLE: ${{ vars.AWS_TERRAFORM_ROLE }}
 
 jobs:
   unlock:
@@ -25,12 +28,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS Credentials (Bootstrap)
+        uses: aws-actions/configure-aws-credentials@v6
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
+          role-to-assume: ${{ env.AWS_BOOTSTRAP_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Assume Terraform Target Role
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_TERRAFORM_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
           
       - name: Unlock Terraform State
         id: unlock
