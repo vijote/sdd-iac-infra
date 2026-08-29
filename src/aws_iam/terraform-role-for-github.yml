@@ -1,0 +1,153 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Target Role for Terraform Deployments with Minimal Baseline Permissions'
+
+Parameters:
+  TerraformStateBucketName:
+    Type: String
+    Description: 'Nombre del bucket de S3 donde guardas el tfstate'
+    Default: 'mi-bucket-tfstate'
+
+Resources:
+  TerraformDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: '/github-roles/'
+      RoleName: 'TerraformDeployRole'
+      Description: 'Rol especifico para ejecutar Terraform desde GitHub Actions'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !ImportValue GitHubBootstrapRoleArn
+            Action:
+              - sts:AssumeRole
+              - sts:TagSession
+      
+      Policies:
+        # 1. Permisos minimos indispensables para el Backend de Terraform
+        - PolicyName: TerraformBackendAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Sub 'arn:aws:s3:::${TerraformStateBucketName}'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub 'arn:aws:s3:::${TerraformStateBucketName}/*'
+
+        # 2. Permisos para administración de VPC y Redes
+        - PolicyName: ManageVPCResources
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  # VPC and Networking
+                  - ec2:DescribeVpcAttribute
+                  - ec2:AssociateRouteTable
+                  - ec2:ModifySubnetAttribute
+                  - ec2:DescribeSecurityGroupRules
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:CreateVpc
+                  - ec2:DeleteVpc
+                  - ec2:DescribeVpcs
+                  - ec2:ModifyVpcAttribute
+                  - ec2:DescribeSubnets
+                  - ec2:CreateSubnet
+                  - ec2:DeleteSubnet
+                  - ec2:DescribeSecurityGroups
+                  - ec2:CreateSecurityGroup
+                  - ec2:DeleteSecurityGroup
+                  - ec2:AuthorizeSecurityGroupIngress
+                  - ec2:AuthorizeSecurityGroupEgress
+                  - ec2:DescribeRouteTables
+                  - ec2:CreateRouteTable
+                  - ec2:DeleteRouteTable
+                  - ec2:DescribeInternetGateways
+                  - ec2:CreateInternetGateway
+                  - ec2:AttachInternetGateway
+                  - ec2:DetachInternetGateway
+                  - ec2:DeleteInternetGateway
+                  - ec2:CreateRoute
+                  - ec2:DeleteRoute
+                  - ec2:DescribeRoutes
+                  - ec2:RevokeSecurityGroupIngress
+                  - ec2:DisassociateRouteTable
+                  - ec2:RevokeSecurityGroupEgress
+                  - ec2:ImportKeyPair
+
+                  # EC2 Instance Management
+                  - ec2:RunInstances
+                  - ec2:TerminateInstances
+                  - ec2:DescribeInstances
+                  - ec2:DescribeInstanceStatus
+                  - ec2:DescribeInstanceAttribute
+                  - ec2:ModifyInstanceAttribute
+                  - ec2:StopInstances
+                  - ec2:StartInstances
+                  - ec2:RebootInstances
+                  - ec2:DescribeInstanceCreditSpecifications
+                  
+                  
+                  # AMI and Instance Types
+                  - ec2:DescribeImages
+                  - ec2:DescribeInstanceTypes
+                  - ec2:DescribeImageAttribute
+                  
+                  # EBS Volumes
+                  - ec2:CreateVolume
+                  - ec2:DeleteVolume
+                  - ec2:DescribeVolumes
+                  - ec2:DescribeVolumeAttribute
+                  - ec2:AttachVolume
+                  - ec2:DetachVolume
+                  - ec2:ModifyVolumeAttribute
+
+                  # Key Pairs
+                  - ec2:DescribeKeyPairs
+                  - ec2:CreateKeyPair
+                  - ec2:DeleteKeyPair
+                  
+                  # Network Interfaces
+                  - ec2:CreateNetworkInterface
+                  - ec2:DeleteNetworkInterface
+                  - ec2:AttachNetworkInterface
+                  - ec2:DetachNetworkInterface
+                  - ec2:ModifyNetworkInterfaceAttribute
+
+                Resource: '*'
+
+        # Permisos para etiquetado en EC2/VPC
+        - PolicyName: ManageEC2Tags
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:CreateTags
+                  - ec2:DeleteTags
+                  - ec2:DescribeTags
+                Resource: '*'
+
+        # Permisos para administración de políticas inline en IAM
+        - PolicyName: ManageIAMRolePolicies
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:PutRolePolicy
+                  - iam:GetRolePolicy
+                  - iam:DeleteRolePolicy
+                Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/github-roles/*'
+
+Outputs:
+  RoleArn:
+    Description: 'ARN del rol para usar en la configuracion de Terraform'
+    Value: !GetAtt TerraformDeployRole.Arn
