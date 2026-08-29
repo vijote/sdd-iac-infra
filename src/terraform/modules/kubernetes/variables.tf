@@ -29,13 +29,13 @@ variable "security_group_ids" {
 variable "control_plane_instance_type" {
   description = "EC2 instance type for control plane"
   type        = string
-  default     = "t3.micro"
+  default     = "t2.micro"
 }
 
 variable "worker_instance_type" {
   description = "EC2 instance type for worker nodes"
   type        = string
-  default     = "t3.micro"
+  default     = "t2.micro"
 }
 
 variable "worker_count" {
