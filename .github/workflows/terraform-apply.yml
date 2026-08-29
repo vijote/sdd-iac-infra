@@ -130,8 +130,22 @@ jobs:
 
           echo "Control Plane IP: $CONTROL_PLANE_IP"
 
-          # 4. Extraer el kubeconfig vía SCP desde la EC2
-          scp -o StrictHostKeyChecking=no -i ~/.kube/ssh_key.pem ubuntu@$CONTROL_PLANE_IP:/home/ubuntu/.kube/config ~/.kube/config
+          # 4. Bucle de espera en el runner mientras la EC2 termina de ejecutar cloud-init
+          MAX_RETRIES=30
+          COUNT=0
+
+          until scp -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ~/.kube/ssh_key.pem ubuntu@$CONTROL_PLANE_IP:/home/ubuntu/.kube/config ~/.kube/config 2>/dev/null; do
+            COUNT=$((COUNT+1))
+            if [ $COUNT -ge $MAX_RETRIES ]; then
+              echo "Error: Tiempo de espera agotado (5m). Kubeadm no creó el archivo en la EC2."
+              rm -f ~/.kube/ssh_key.pem
+              exit 1
+            fi
+            echo "Esperando a que cloud-init termine dentro de la EC2 (Intento $COUNT/$MAX_RETRIES)..."
+            sleep 10
+          done
+
+          echo "¡Kubeconfig obtenido con éxito!"
 
           # 5. Reemplazar la IP local por la IP pública para la comunicación de kubectl
           sed -i "s/127.0.0.1/$CONTROL_PLANE_IP/g" ~/.kube/config
