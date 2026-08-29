@@ -76,6 +76,13 @@ runcmd:
   - mkdir -p /root/.kube
   - cp -i /etc/kubernetes/admin.conf /root/.kube/config
   - chown $(id -u):$(id -g) /root/.kube/config
+
+  # --- CONFIGURACIÓN PARA EL USUARIO UBUNTU Y GITHUB ACTIONS ---
+  - mkdir -p /home/ubuntu/.kube
+  - cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config
+  - chown -R ubuntu:ubuntu /home/ubuntu/.kube
+  - chmod 644 /etc/kubernetes/admin.conf
+  # -------------------------------------------------------------
   
   # Generate join command for workers
   - kubeadm token create --print-join-command > /tmp/join-command.sh
