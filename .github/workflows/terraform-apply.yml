@@ -176,9 +176,3 @@ jobs:
       - name: Terraform Apply Remaining Workloads
         run: terraform apply -input=false -auto-approve
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
-
-      - name: Terraform Destroy on Failure
-        if: cancelled() || failure()
-        run: |
-          terraform force-unlock -force $LOCK_ID || true
-          terraform destroy -auto-approve

@@ -58,6 +58,9 @@ runcmd:
   # 8. Inicializar Kubernetes Cluster
   - kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
 
+  # Initialize Kubernetes cluster agregando la IP pública a los SANs del certificado
+  - PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) && kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4) --apiserver-cert-extra-sans=$PUBLIC_IP,localhost,127.0.0.1 --ignore-preflight-errors=NumCPU,Mem
+  
   # 9. Configurar acceso a kubeconfig para root y ubuntu
   - mkdir -p /root/.kube
   - cp -i /etc/kubernetes/admin.conf /root/.kube/config
