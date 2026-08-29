@@ -1,0 +1,98 @@
+name: Refresh Dev Environment State
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment to refresh state'
+        required: true
+        type: choice
+        options:
+          - dev
+
+permissions:
+  id-token: write          # Required for OIDC authentication
+  contents: read          # Required for repository checkout
+  actions: write          # Required for workflow summaries and artifacts
+
+env:
+  ENVIRONMENT: ${{ github.event.inputs.environment }}
+  AWS_BOOTSTRAP_ROLE: ${{ vars.AWS_BOOTSTRAP_ROLE }}
+  AWS_TERRAFORM_ROLE: ${{ vars.AWS_TERRAFORM_ROLE }}
+  AWS_REGION: us-east-1
+  TERRAFORM_VERSION: 1.5.7
+  STATE_BUCKET_NAME: ${{ vars.STATE_BUCKET_NAME }}
+  TF_VAR_aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+  TF_VAR_aws_terraform_role_name: ${{ vars.AWS_TERRAFORM_ROLE_NAME }}
+  TF_VAR_aws_state_bucket_name: ${{ vars.STATE_BUCKET_NAME }}
+
+  # Application secrets (from repository secrets)
+  TF_VAR_mysql_root_password: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+  TF_VAR_mysql_password: ${{ secrets.MYSQL_PASSWORD }}
+  TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Configure AWS Credentials (Bootstrap)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_BOOTSTRAP_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Assume Terraform Target Role
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_TERRAFORM_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ">= 1.0"
+          terraform_wrapper: false
+          
+      - name: Terraform Init
+        run: |
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}"
+          
+      - name: Create Dummy Kubeconfig for Provider Refresh
+        run: |
+          mkdir -p ~/.kube
+          cat <<EOF > ~/.kube/config
+          apiVersion: v1
+          kind: Config
+          clusters:
+          - cluster:
+              server: https://127.0.0.1:6443
+            name: dummy-cluster
+          contexts:
+          - context:
+              cluster: dummy-cluster
+              user: dummy-user
+            name: dummy-context
+          current-context: dummy-context
+          users:
+          - name: dummy-user
+            user:
+              token: dummy-token
+          EOF
+          chmod 600 ~/.kube/config
+
+      - name: Terraform Refresh State
+        id: refresh
+        run: |
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          
+          echo "🔄 Sincronizando el tfstate con los recursos reales de AWS..."
+          terraform apply -refresh-only -input=false -auto-approve
+          
+          echo "✅ Refresh completado. El archivo de estado ahora refleja la realidad de AWS."
