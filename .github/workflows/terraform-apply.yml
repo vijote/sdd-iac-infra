@@ -114,19 +114,26 @@ jobs:
         run: |
           mkdir -p ~/.kube
 
-          # Extraer la clave privada directamente desde los outputs de Terraform
+          # 1. Inicializar Terraform en el directorio para poder consultar los outputs del estado en S3
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}"
+
+          # 2. Extraer la clave privada SSH generada por Terraform
           terraform output -raw ec2_ssh_private_key > ~/.kube/ssh_key.pem
           chmod 600 ~/.kube/ssh_key.pem
 
+          # 3. Obtener la IP Pública del Control Plane mediante AWS CLI
           CONTROL_PLANE_IP=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=*control-plane*" "Name=instance-state-name,Values=running" \
             --query "Reservations[0].Instances[0].PublicIpAddress" \
             --output text)
 
-          # Ejecutar SCP usando la llave exportada
+          echo "Control Plane IP: $CONTROL_PLANE_IP"
+
+          # 4. Extraer el kubeconfig vía SCP desde la EC2
           scp -o StrictHostKeyChecking=no -i ~/.kube/ssh_key.pem ubuntu@$CONTROL_PLANE_IP:/home/ubuntu/.kube/config ~/.kube/config
 
+          # 5. Reemplazar la IP local por la IP pública para la comunicación de kubectl
           sed -i "s/127.0.0.1/$CONTROL_PLANE_IP/g" ~/.kube/config
           chmod 600 ~/.kube/config
           rm -f ~/.kube/ssh_key.pem
