@@ -71,7 +71,7 @@ module "kubernetes" {
     module.networking.worker_node_security_group_id
   ]
 
-  control_plane_instance_type = "t3.small"
+  control_plane_instance_type = "t3.micro"
   worker_instance_type        = "t3.micro"
   worker_count                = 2
 }

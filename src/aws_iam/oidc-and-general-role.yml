@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'GitHub Actions OIDC Provider and Bootstrap Role Stack'
+
+Parameters:
+  GitHubOrgOrUser:
+    Type: String
+    Description: 'Nombre de tu usuario u organización de GitHub (ej: tu-usuario)'
+    Default: '*'
+
+Resources:
+  # 1. OIDC Identity Provider
+  GithubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - ab9d0263244dd0326eb67015705a667e79cfe998
+
+  # 2. Rol Genérico / Bootstrap
+  GitHubBootstrapRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: gha-bootstrap-role
+      Description: 'Rol asumido por GitHub OIDC que permite el salto (assume role) a roles especificos'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GithubOidcProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com'
+              StringLike:
+                'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubOrgOrUser}*'
+      Policies:
+        - PolicyName: AllowAssumeTargetRoles
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/github-roles/*'
+
+Outputs:
+  OidcProviderArn:
+    Description: 'ARN del OIDC Provider de GitHub'
+    Value: !Ref GithubOidcProvider
+    Export:
+      Name: GitHubOidcProviderArn
+
+  BootstrapRoleArn:
+    Description: 'ARN del Rol Bootstrap para usar en GitHub Actions'
+    Value: !GetAtt GitHubBootstrapRole.Arn
+    Export:
+      Name: GitHubBootstrapRoleArn
