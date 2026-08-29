@@ -136,12 +136,6 @@ jobs:
             --query "Reservations[0].Instances[0].PrivateIpAddress" \
             --output text)
 
-          echo "Reemplazando IPs internas ($PRIVATE_IP y 127.0.0.1) por IP pública ($CONTROL_PLANE_IP)..."
-
-          # Reemplazar tanto la IP privada interna como localhost por la IP pública
-          sed -i "s/$PRIVATE_IP/$CONTROL_PLANE_IP/g" ~/.kube/config
-          sed -i "s/127.0.0.1/$CONTROL_PLANE_IP/g" ~/.kube/config
-
           # 4. Bucle de espera en el runner mientras la EC2 termina de ejecutar cloud-init
           MAX_RETRIES=30
           COUNT=0
@@ -159,8 +153,12 @@ jobs:
 
           echo "¡Kubeconfig obtenido con éxito!"
 
-          # 5. Reemplazar la IP local por la IP pública para la comunicación de kubectl
+          echo "Reemplazando IPs internas ($PRIVATE_IP y 127.0.0.1) por IP pública ($CONTROL_PLANE_IP)..."
+
+          # Reemplazar tanto la IP privada interna como localhost por la IP pública
+          sed -i "s/$PRIVATE_IP/$CONTROL_PLANE_IP/g" ~/.kube/config
           sed -i "s/127.0.0.1/$CONTROL_PLANE_IP/g" ~/.kube/config
+          
           chmod 600 ~/.kube/config
           rm -f ~/.kube/ssh_key.pem
 
