@@ -20,12 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     outputs:
-      result:
-        description: 'Result message'
-        value: ${{ steps.unlock.outputs.result }}
-      lock_found:
-        description: 'Whether a lock was found'
-        value: ${{ steps.unlock.outputs.lock_found }}
+      result: ${{ steps.unlock.outputs.result }}
+      lock_found: ${{ steps.unlock.outputs.lock_found }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
