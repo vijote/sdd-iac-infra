@@ -72,6 +72,29 @@ jobs:
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
           terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}"
           
+      - name: Create Dummy Kubeconfig for Provider Refresh
+        run: |
+          mkdir -p ~/.kube
+          cat <<EOF > ~/.kube/config
+          apiVersion: v1
+          kind: Config
+          clusters:
+          - cluster:
+              server: https://127.0.0.1:6443
+            name: dummy-cluster
+          contexts:
+          - context:
+              cluster: dummy-cluster
+              user: dummy-user
+            name: dummy-context
+          current-context: dummy-context
+          users:
+          - name: dummy-user
+            user:
+              token: dummy-token
+          EOF
+          chmod 600 ~/.kube/config
+          
       - name: Terraform Destroy
         id: destroy
         run: |
