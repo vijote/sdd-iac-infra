@@ -112,7 +112,6 @@ resource "aws_security_group" "control_plane" {
   )
 }
 
-Regla para permitir SSH (puerto 22) desde Internet / GitHub Actions
 resource "aws_security_group_rule" "control_plane_ssh" {
   count = var.enable_control_plane_sg ? 1 : 0
 
@@ -125,7 +124,6 @@ resource "aws_security_group_rule" "control_plane_ssh" {
   description       = "Allow SSH access from external runners"
 }
 
-# Regla para permitir la API de Kubernetes (puerto 6443) desde Internet
 resource "aws_security_group_rule" "control_plane_api_external" {
   count = var.enable_control_plane_sg ? 1 : 0
 
