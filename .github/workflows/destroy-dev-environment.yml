@@ -95,11 +95,10 @@ jobs:
           EOF
           chmod 600 ~/.kube/config
 
-      - name: Auto-Cleanup Orphan Network Interfaces (ENIs)
+      - name: Force Terminate EC2 Instances & Clean VPC Resources
         run: |
           echo "Buscando VPC del entorno '${{ env.ENVIRONMENT }}'..."
           
-          # 1. Obtener la VPC correspondiente
           VPC_ID=$(aws ec2 describe-vpcs \
             --filters "Name=tag:Name,Values=*${{ env.ENVIRONMENT }}*" \
             --query "Vpcs[0].VpcId" --output text)
@@ -107,28 +106,32 @@ jobs:
           if [ -n "$VPC_ID" ] && [ "$VPC_ID" != "None" ]; then
             echo "VPC identificada: $VPC_ID"
 
-            # 2. Desconectar y eliminar todas las ENIs pertenecientes a esa VPC
+            # 1. Obtener todas las instancias EC2 en la VPC (excluyendo las ya terminadas)
+            INSTANCE_IDS=$(aws ec2 describe-instances \
+              --filters "Name=vpc-id,Values=$VPC_ID" "Name=instance-state-name,Values=pending,running,stopping,stopped" \
+              --query "Reservations[*].Instances[*].InstanceId" --output text)
+
+            if [ -n "$INSTANCE_IDS" ] && [ "$INSTANCE_IDS" != "None" ]; then
+              echo "Terminando las siguientes instancias EC2: $INSTANCE_IDS"
+              aws ec2 terminate-instances --instance-ids $INSTANCE_IDS
+
+              echo "Esperando a que las instancias se destruyan por completo (estado terminated)..."
+              aws ec2 wait instance-terminated --instance-ids $INSTANCE_IDS
+              echo "Instancias eliminadas exitosamente."
+            else
+              echo "No hay instancias EC2 activas en la VPC."
+            fi
+
+            # 2. Ahora que las EC2 murieron, eliminar ENIs secundarias si quedara alguna
             ENIS=$(aws ec2 describe-network-interfaces \
               --filters "Name=vpc-id,Values=$VPC_ID" \
               --query "NetworkInterfaces[*].NetworkInterfaceId" --output text)
 
             for eni in $ENIS; do
-              echo "Procesando ENI: $eni"
-              
-              # Obtener attachment si existe
-              ATTACHMENT=$(aws ec2 describe-network-interfaces \
-                --network-interface-ids "$eni" \
-                --query "NetworkInterfaces[0].Attachment.AttachmentId" --output text)
-
-              if [ -n "$ATTACHMENT" ] && [ "$ATTACHMENT" != "None" ]; then
-                echo "Desconectando attachment $ATTACHMENT..."
-                aws ec2 detach-network-interface --attachment-id "$ATTACHMENT" --force || true
-                sleep 3
-              fi
-
-              echo "Eliminando ENI $eni..."
+              echo "Eliminando ENI restante: $eni"
               aws ec2 delete-network-interface --network-interface-id "$eni" || true
             done
+
           else
             echo "No se encontró VPC activa para el entorno."
           fi
