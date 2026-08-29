@@ -15,6 +15,9 @@ on:
 permissions:
   contents: read
 
+env:
+  STATE_BUCKET_NAME: ${{ vars.STATE_BUCKET_NAME }}
+
 jobs:
   unlock:
     runs-on: ubuntu-latest
@@ -37,7 +40,7 @@ jobs:
         id: unlock
         run: |
           # Set variables
-          BUCKET="${{ github.event.inputs.bucket }}"
+          BUCKET="${{ env.STATE_BUCKET_NAME }}"
           STATE_KEY="${{ github.event.inputs.state_key }}"
           LOCK_KEY="${STATE_KEY}.tflock"
           
@@ -114,28 +117,3 @@ jobs:
         run: |
           echo "Result: ${{ steps.unlock.outputs.result }}"
           echo "Lock found: ${{ steps.unlock.outputs.lock_found }}"
-          
-      - name: Summary
-        if: always()
-        run: |
-          # Create GitHub Actions summary
-          echo "## Terraform State Unlock Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Bucket:** ${{ github.event.inputs.bucket }}" >> $GITHUB_STEP_SUMMARY
-          echo "**State Key:** ${{ github.event.inputs.state_key }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Result:** ${{ steps.unlock.outputs.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Lock Found:** ${{ steps.unlock.outputs.lock_found }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # Add status badge
-          if [[ "${{ job.status }}" == "success" ]]; then
-            echo "✅ **Status:** Success" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Status:** Failed" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          # Add additional context if lock was found
-          if [[ "${{ steps.unlock.outputs.lock_found }}" == "true" ]]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "A stale Terraform state lock was found and successfully removed." >> $GITHUB_STEP_SUMMARY
-          fi
