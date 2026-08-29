@@ -41,6 +41,7 @@ jobs:
   apply-base-infra:
     name: "Phase 1: Base Infrastructure (VPC & EC2)"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -82,6 +83,7 @@ jobs:
     name: "Phase 2: K8s Infrastructure & Apps"
     needs: apply-base-infra
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -158,7 +160,7 @@ jobs:
           # Reemplazar tanto la IP privada interna como localhost por la IP pública
           sed -i "s/$PRIVATE_IP/$CONTROL_PLANE_IP/g" ~/.kube/config
           sed -i "s/127.0.0.1/$CONTROL_PLANE_IP/g" ~/.kube/config
-          
+
           chmod 600 ~/.kube/config
           rm -f ~/.kube/ssh_key.pem
 
@@ -174,3 +176,9 @@ jobs:
       - name: Terraform Apply Remaining Workloads
         run: terraform apply -input=false -auto-approve
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
+
+      - name: Terraform Destroy on Failure
+        if: cancelled() || failure()
+        run: |
+          terraform force-unlock -force $LOCK_ID || true
+          terraform destroy -auto-approve
