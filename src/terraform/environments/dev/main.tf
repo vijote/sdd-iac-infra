@@ -103,3 +103,8 @@ module "application_infrastructure" {
     helm       = helm
   }
 }
+
+output "ec2_ssh_private_key" {
+  value     = module.kubernetes.ssh_private_key
+  sensitive = true
+}

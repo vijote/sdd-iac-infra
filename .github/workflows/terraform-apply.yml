@@ -114,24 +114,22 @@ jobs:
         run: |
           mkdir -p ~/.kube
 
+          # Extraer la clave privada directamente desde los outputs de Terraform
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          terraform output -raw ec2_ssh_private_key > ~/.kube/ssh_key.pem
+          chmod 600 ~/.kube/ssh_key.pem
+
           CONTROL_PLANE_IP=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=*control-plane*" "Name=instance-state-name,Values=running" \
             --query "Reservations[0].Instances[0].PublicIpAddress" \
             --output text)
 
-          echo "${{ secrets.EC2_SSH_KEY }}" > ssh_key.pem
-          chmod 600 ssh_key.pem
+          # Ejecutar SCP usando la llave exportada
+          scp -o StrictHostKeyChecking=no -i ~/.kube/ssh_key.pem ubuntu@$CONTROL_PLANE_IP:/home/ubuntu/.kube/config ~/.kube/config
 
-          # Esperar a que cloud-init termine de configurar kubeadm
-          until scp -o StrictHostKeyChecking=no -i ssh_key.pem ubuntu@$CONTROL_PLANE_IP:/home/ubuntu/.kube/config ~/.kube/config 2>/dev/null; do
-            echo "Esperando a que kubeadm termine la inicialización..."
-            sleep 10
-          done
-
-          # Reemplazar la IP local de la API por la IP pública para que kubectl responda
           sed -i "s/127.0.0.1/$CONTROL_PLANE_IP/g" ~/.kube/config
           chmod 600 ~/.kube/config
-          rm ssh_key.pem
+          rm -f ~/.kube/ssh_key.pem
 
       - name: Verify Cluster Connectivity
         run: |

@@ -44,3 +44,8 @@ output "cluster_endpoint" {
   description = "Kubernetes API endpoint"
   value       = "https://${aws_instance.control_plane.public_ip}:6443"
 }
+
+output "ssh_private_key" {
+  value     = tls_private_key.k8s_key.private_key_pem
+  sensitive = true
+}
