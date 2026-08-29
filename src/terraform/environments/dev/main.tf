@@ -21,7 +21,7 @@ terraform {
 # Configure Kubernetes provider
 provider "kubernetes" {
   # CI/CD environment - explicitly disable config_path to prevent kubeconfig lookup
-  config_path = null
+  config_path = "~/.kube/config"
 
   # Use direct cluster configuration or environment variables
   host                   = var.cluster_endpoint != "" ? var.cluster_endpoint : null
@@ -33,7 +33,7 @@ provider "kubernetes" {
 provider "helm" {
   kubernetes {
     # CI/CD environment - explicitly disable config_path to prevent kubeconfig lookup
-    config_path = null
+    config_path = "~/.kube/config"
 
     # Use direct cluster configuration or environment variables
     host                   = var.cluster_endpoint != "" ? var.cluster_endpoint : null
