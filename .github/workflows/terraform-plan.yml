@@ -30,7 +30,6 @@ env:
   TF_VAR_aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
   TF_VAR_aws_terraform_role_name: ${{ vars.AWS_TERRAFORM_ROLE_NAME }}
   TF_VAR_aws_state_bucket_name: ${{ vars.STATE_BUCKET_NAME }}
-  # Kubeadm-specific variables
   TF_VAR_kubeconfig_path: ${{ vars.TF_VAR_kubeconfig_path || '~/.kube/config' }}
 
 jobs:
@@ -48,7 +47,6 @@ jobs:
           role-to-assume: ${{ env.AWS_BOOTSTRAP_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # Step 2: Assume target
       - name: Assume Terraform Target Role
         uses: aws-actions/configure-aws-credentials@v6
         with:
@@ -77,11 +75,15 @@ jobs:
         run: terraform validate -no-color
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
 
-      - name: Terraform Plan
+      - name: Terraform Plan (Base Infrastructure)
         env:
           TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
           TF_VAR_mysql_password: ${{ secrets.MYSQL_PASSWORD }}
           TF_VAR_mysql_root_password: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         id: plan
-        run: terraform plan -input=false -no-color -out=tfplan
+        run: |
+          terraform plan -input=false -no-color \
+            -target=module.networking \
+            -target=module.kubernetes \
+            -out=tfplan
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
