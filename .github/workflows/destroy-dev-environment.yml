@@ -78,9 +78,6 @@ jobs:
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
           
           # Execute destruction
-          terraform apply -input=false -auto-approve destroy.plan
-          
-          # Verify destruction
-          terraform show -json > final_state.json
+          terraform destroy -input=false -auto-approve
           
           echo "✅ Destruction completed"
