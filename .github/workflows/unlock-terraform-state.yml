@@ -9,7 +9,8 @@ on:
         type: string
 
 permissions:
-  contents: read
+  id-token: write          # Required for OIDC
+  contents: read          # Required for checkout
 
 env:
   STATE_BUCKET_NAME: ${{ vars.STATE_BUCKET_NAME }}
