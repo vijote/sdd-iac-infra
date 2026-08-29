@@ -1,4 +1,3 @@
-
 {
-  "feature_directory": "specs/005-application-infrastructure-foundation"
+  "feature_directory": "specs/009-s3-state-unlock"
 }

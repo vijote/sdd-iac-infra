@@ -1,0 +1,145 @@
+name: "Unlock Terraform State"
+
+on:
+  workflow_dispatch:
+    inputs:
+      bucket:
+        description: 'S3 bucket containing Terraform state'
+        required: true
+        type: string
+      state_key:
+        description: 'Terraform state file key (without .tflock extension)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  unlock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      result:
+        description: 'Result message'
+        value: ${{ steps.unlock.outputs.result }}
+      lock_found:
+        description: 'Whether a lock was found'
+        value: ${{ steps.unlock.outputs.lock_found }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
+          
+      - name: Unlock Terraform State
+        id: unlock
+        run: |
+          # Set variables
+          BUCKET="${{ github.event.inputs.bucket }}"
+          STATE_KEY="${{ github.event.inputs.state_key }}"
+          LOCK_KEY="${STATE_KEY}.tflock"
+          
+          # Initialize outputs
+          RESULT=""
+          LOCK_FOUND="false"
+          
+          # Validate inputs
+          if [[ -z "$BUCKET" || -z "$STATE_KEY" ]]; then
+            RESULT="Error: Bucket and state_key inputs are required"
+            echo "Error: Bucket and state_key inputs are required"
+            echo "result=${RESULT}" >> $GITHUB_OUTPUT
+            echo "lock_found=${LOCK_FOUND}" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Test AWS credentials
+          echo "Verifying AWS credentials..."
+          if ! aws sts get-caller-identity >/dev/null 2>&1; then
+            RESULT="AWS authentication failed - check credentials"
+            echo "Error: AWS authentication failed - check AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY"
+            echo "result=${RESULT}" >> $GITHUB_OUTPUT
+            echo "lock_found=${LOCK_FOUND}" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Check if bucket exists
+          echo "Verifying bucket access..."
+          if ! aws s3api head-bucket --bucket "$BUCKET" >/dev/null 2>&1; then
+            RESULT="S3 bucket not found or no access - check bucket name and permissions"
+            echo "Error: S3 bucket '$BUCKET' not found or no access"
+            echo "result=${RESULT}" >> $GITHUB_OUTPUT
+            echo "lock_found=${LOCK_FOUND}" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Check if lock exists
+          echo "Checking for lock: s3://${BUCKET}/${LOCK_KEY}"
+          if aws s3api head-object --bucket "$BUCKET" --key "$LOCK_KEY" >/dev/null 2>&1; then
+            echo "Lock found, retrieving lock information..."
+            if LOCK_INFO=$(aws s3api get-object --bucket "$BUCKET" --key "$LOCK_KEY" /dev/stdout 2>/dev/null); then
+              echo "Lock info: $LOCK_INFO"
+              LOCK_FOUND="true"
+              
+              # Remove the lock
+              echo "Removing lock..."
+              if aws s3api delete-object --bucket "$BUCKET" --key "$LOCK_KEY"; then
+                RESULT="Lock removed successfully"
+                echo "Lock removed successfully"
+              else
+                RESULT="Failed to remove lock - check permissions for s3:DeleteObject"
+                echo "Error: Failed to remove lock - check IAM permissions"
+                echo "result=${RESULT}" >> $GITHUB_OUTPUT
+                echo "lock_found=${LOCK_FOUND}" >> $GITHUB_OUTPUT
+                exit 1
+              fi
+            else
+              RESULT="Failed to retrieve lock information - check permissions for s3:GetObject"
+              echo "Error: Failed to retrieve lock info - check IAM permissions"
+              echo "result=${RESULT}" >> $GITHUB_OUTPUT
+              echo "lock_found=${LOCK_FOUND}" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          else
+            RESULT="No lock found - state is already unlocked"
+            echo "No lock found - state is already unlocked"
+          fi
+          
+          # Set outputs
+          echo "result=${RESULT}" >> $GITHUB_OUTPUT
+          echo "lock_found=${LOCK_FOUND}" >> $GITHUB_OUTPUT
+          
+      - name: Display Result
+        run: |
+          echo "Result: ${{ steps.unlock.outputs.result }}"
+          echo "Lock found: ${{ steps.unlock.outputs.lock_found }}"
+          
+      - name: Summary
+        if: always()
+        run: |
+          # Create GitHub Actions summary
+          echo "## Terraform State Unlock Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Bucket:** ${{ github.event.inputs.bucket }}" >> $GITHUB_STEP_SUMMARY
+          echo "**State Key:** ${{ github.event.inputs.state_key }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Result:** ${{ steps.unlock.outputs.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Lock Found:** ${{ steps.unlock.outputs.lock_found }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Add status badge
+          if [[ "${{ job.status }}" == "success" ]]; then
+            echo "✅ **Status:** Success" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status:** Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Add additional context if lock was found
+          if [[ "${{ steps.unlock.outputs.lock_found }}" == "true" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "A stale Terraform state lock was found and successfully removed." >> $GITHUB_STEP_SUMMARY
+          fi

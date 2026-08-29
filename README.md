@@ -46,6 +46,9 @@ The SDD Infrastructure project implements Infrastructure as Code principles with
 │                                                             │
 │  Spec 004: Destroy Pipeline (Operational)                  │
 │  └── Manual Dev Environment Destruction                     │
+│                                                             │
+│  Spec 009: S3 State Unlock (Operational)                    │
+│  └── Emergency State Lock Recovery                          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -338,6 +341,12 @@ terraform destroy
 - Use the destroy pipeline (Spec 004) for dev environment
 - Monitor resource usage regularly
 - Budget alerts configured at $40/month
+
+### State Lock Recovery
+- Use the "Unlock Terraform State" workflow (Spec 009) when Terraform workflows are cancelled mid-execution
+- Trigger via GitHub Actions workflow dispatch with bucket and state_key parameters
+- Removes stale S3 state locks to allow subsequent deployments
+- Requires AWS credentials with S3 permissions on lock objects
 
 ### Incident Response
 1. Check validation scripts outputs
