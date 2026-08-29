@@ -12,7 +12,7 @@ module "networking" {
   vpc_cidr    = "10.1.0.0/16"
 
   public_subnet_cidr   = "10.1.1.0/24"
-  private_subnet_cidrs = ["10.1.11.0/24", "10.1.12.0/24", "10.1.13.0/24"]
+  private_subnet_cidrs = ["10.1.11.0/24", "10.1.12.0/24"]
 
   # Enable Kubernetes security groups
   enable_control_plane_sg = true

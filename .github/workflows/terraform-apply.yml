@@ -27,6 +27,7 @@ env:
   TF_VAR_aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
   TF_VAR_aws_terraform_role_name: ${{ vars.AWS_TERRAFORM_ROLE_NAME }}
   TF_VAR_aws_state_bucket_name: ${{ vars.STATE_BUCKET_NAME }}
+  TF_VAR_kubeconfig_path: ${{ vars.TF_VAR_kubeconfig_path || '~/.kube/config' }}
 
   # Application secrets (from repository secrets)
   TF_VAR_mysql_root_password: ${{ secrets.MYSQL_ROOT_PASSWORD }}
@@ -34,10 +35,12 @@ env:
   TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
 
 jobs:
-  terraform-apply:
-    name: "Terraform Apply"
+  # ==========================================
+  # ETAPA 1: Provisionar Infraestructura Base (AWS EC2 + Kubeadm)
+  # ==========================================
+  apply-base-infra:
+    name: "Phase 1: Base Infrastructure (VPC & EC2)"
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,22 +65,83 @@ jobs:
           terraform_wrapper: false
 
       - name: Terraform Init
-        id: init
         run: terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}"
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
 
-      - name: Terraform Validate
-        id: validate
-        run: terraform validate -no-color
+      - name: Terraform Apply Base Infrastructure
+        run: |
+          terraform apply -input=false -auto-approve \
+            -target=module.networking \
+            -target=module.kubernetes
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
 
-      - name: Terraform Plan
-        id: plan
-        run: terraform plan -input=false -no-color -out=tfplan
+  # ==========================================
+  # ETAPA 2: Extraer Kubeconfig y Aplicar Componentes de K8s (Spec 005)
+  # ==========================================
+  apply-k8s-resources:
+    name: "Phase 2: K8s Infrastructure & Apps"
+    needs: apply-base-infra
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (Bootstrap)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_BOOTSTRAP_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Assume Terraform Target Role
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_TERRAFORM_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ">= 1.0"
+          terraform_wrapper: false
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+
+      - name: Fetch Kubeconfig from Control Plane EC2
+        run: |
+          mkdir -p ~/.kube
+
+          CONTROL_PLANE_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=*control-plane*" "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].PublicIpAddress" \
+            --output text)
+
+          echo "${{ secrets.EC2_SSH_KEY }}" > ssh_key.pem
+          chmod 600 ssh_key.pem
+
+          # Esperar a que cloud-init termine de configurar kubeadm
+          until scp -o StrictHostKeyChecking=no -i ssh_key.pem ubuntu@$CONTROL_PLANE_IP:/home/ubuntu/.kube/config ~/.kube/config 2>/dev/null; do
+            echo "Esperando a que kubeadm termine la inicialización..."
+            sleep 10
+          done
+
+          # Reemplazar la IP local de la API por la IP pública para que kubectl responda
+          sed -i "s/127.0.0.1/$CONTROL_PLANE_IP/g" ~/.kube/config
+          chmod 600 ~/.kube/config
+          rm ssh_key.pem
+
+      - name: Verify Cluster Connectivity
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Terraform Init
+        run: terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}"
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
 
-
-      - name: Terraform Apply
-        id: apply
-        run: terraform apply -input=false -auto-approve tfplan
+      - name: Terraform Apply Remaining Workloads
+        run: terraform apply -input=false -auto-approve
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}

@@ -1,9 +1,16 @@
 <!--
 Sync Impact Report:
-- Version change: 2.0.0 → 2.1.0 (minor amendment - manual IAM management exception)
-- Modified principles: Principle II (Terraform Source of Truth) and Principle VI (Security Defaults)
-- Added exceptions: IAM roles and OIDC provider manually provisioned for bootstrap security
-- Rationale: Avoid circular dependencies, maintain security isolation for critical bootstrap resources
+- Version change: 2.1.0 → 2.2.0 (minor amendment - ECR-triggered app deployment model)
+  (Note: footer previously still read 2.0.0 despite the 2.1.0 IAM exception already
+  being present in the body; corrected here as part of this amendment.)
+- Modified principles: Principle V (Kubernetes as a Platform, Not a Target)
+- Modified sections: Acceptable Technologies (Required, Forbidden)
+- Added: application deployment trigger model — apps push images to ECR, which
+  triggers a GitHub Actions workflow (owned by this repo) that applies the
+  corresponding Kubernetes manifests to the cluster
+- Rationale: Apps still live in and build from their own repos, but the deployment
+  mechanism (manifests + trigger) needed a defined home; push-based CD from ECR was
+  chosen over pull-based GitOps (ArgoCD/Flux remain forbidden)
 -->
 
 # SDD-Infra Constitution
@@ -25,7 +32,9 @@ We describe *what* the infrastructure should be, not *how* to build it step-by-s
 This is a learning project with tight budget constraints. Complexity is justified and documented. Every architectural choice trades off against cost, performance, and understandability. When in doubt, choose the simpler path.
 
 ### V. Kubernetes as a Platform, Not a Target
-Kubernetes is the container orchestration platform. This repo provisions the cluster and foundational infrastructure; applications are deployed separately from their own repos. Clear separation of concerns between cluster and apps.
+Kubernetes is the container orchestration platform. This repo provisions the cluster and foundational infrastructure. Application source code, Dockerfiles, and build pipelines live in their own separate repos — this repo never contains application source code. Clear separation of concerns between cluster and apps.
+
+**Deployment Trigger**: Application repos build and push their images to Amazon ECR. An ECR push triggers a GitHub Actions workflow, owned by this repo, that applies the corresponding Kubernetes manifests (managed under `src/terraform/modules/application-deployment/`) to update the running workload on the cluster. Deployment stays declarative and version-controlled — the manifests being applied live in this repo — but the trigger for a given deploy originates externally, from the app's ECR push, not from a manual `terraform apply` of this repo.
 
 ### VI. Security Defaults, Not Afterthought
 IAM roles are least-privilege and manually managed for bootstrap security. Secrets are never in code; AWS Secrets Manager is mandatory. Inter-node communication is encrypted (Flannel VXLAN). VPC security groups restrict traffic. RBAC is minimal but foundational. Security reviews required for any changes.
@@ -93,6 +102,8 @@ Any change to infrastructure scope or principle requires a new Decision Log entr
 - **nginx-ingress:** Ingress controller.
 - **AWS Secrets Manager:** Secret storage.
 - **Route53:** DNS.
+- **Amazon ECR:** Container image registry; source of the deployment trigger for apps.
+- **GitHub Actions:** CI/CD, including the ECR-push-triggered deployment workflow.
 
 ### Allowed (May be used if justified)
 - **CloudFormation:** Only for resources not easily managed via Terraform.
@@ -103,7 +114,7 @@ Any change to infrastructure scope or principle requires a new Decision Log entr
 - **Managed Kubernetes (EKS, AKS):** Defeats the learning goal.
 - **Complex monitoring stacks (Prometheus, ELK):** Out of scope; future work.
 - **Service mesh (Istio, Linkerd):** Out of scope; future work.
-- **GitOps tools (ArgoCD, Flux):** Out of scope; apps deploy separately.
+- **GitOps tools (ArgoCD, Flux):** Out of scope; deployment is push-based (GitHub Actions reacting to an ECR push), not pull-based reconciliation.
 
 ---
 
@@ -167,4 +178,4 @@ If two principles conflict, the earlier-numbered principle takes precedence. If 
 
 ---
 
-**Version**: 2.0.0 | **Ratified**: 2026-08-20 | **Last Amended**: 2026-08-23
+**Version**: 2.2.0 | **Ratified**: 2026-08-20 | **Last Amended**: 2026-08-27

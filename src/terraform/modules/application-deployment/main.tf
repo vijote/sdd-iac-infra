@@ -2,22 +2,17 @@
 
 # Configure Kubernetes provider
 provider "kubernetes" {
-  config_path = var.kubeconfig_path
-  
-  # Use direct cluster configuration if provided
-  host = var.cluster_endpoint != "" ? var.cluster_endpoint : null
-  cluster_ca_certificate = var.cluster_ca_certificate != "" ? var.cluster_ca_certificate : null
-  token = var.cluster_token != "" ? var.cluster_token : null
+  host                   = var.cluster_endpoint
+  cluster_ca_certificate = var.cluster_ca_certificate
+  token                  = var.cluster_token
 }
 
 # Configure kubectl provider
 provider "kubectl" {
-  config_path = var.kubeconfig_path
-  
-  # Use direct cluster configuration if provided
-  host = var.cluster_endpoint != "" ? var.cluster_endpoint : null
-  cluster_ca_certificate = var.cluster_ca_certificate != "" ? var.cluster_ca_certificate : null
-  token = var.cluster_token != "" ? var.cluster_token : null
+  load_config_file       = false
+  host                   = var.cluster_endpoint
+  cluster_ca_certificate = var.cluster_ca_certificate
+  token                  = var.cluster_token
 }
 
 # Create namespace for demo applications
@@ -38,8 +33,8 @@ resource "kubernetes_secret" "mysql_secrets" {
     name      = "mysql-secrets"
     namespace = var.namespace
     labels = {
-      app        = "mysql"
-      tier       = "database"
+      app         = "mysql"
+      tier        = "database"
       environment = var.environment
     }
   }
@@ -60,8 +55,8 @@ resource "kubernetes_secret" "backend_secrets" {
     name      = "backend-secrets"
     namespace = var.namespace
     labels = {
-      app        = "backend"
-      tier       = "api"
+      app         = "backend"
+      tier        = "api"
       environment = var.environment
     }
   }
@@ -70,7 +65,7 @@ resource "kubernetes_secret" "backend_secrets" {
 
   data = {
     database-password = base64encode(var.mysql_password)
-    jwt-secret       = base64encode(var.jwt_secret)
+    jwt-secret        = base64encode(var.jwt_secret)
   }
 
   depends_on = [kubernetes_namespace.demo_apps]
@@ -79,9 +74,9 @@ resource "kubernetes_secret" "backend_secrets" {
 # Deploy all Kubernetes manifests from the kubernetes directory (except secrets)
 resource "kubectl_manifest" "deployments" {
   for_each = fileset("${path.module}/kubernetes", "**/*.yaml")
-  
+
   yaml_body = file("${path.module}/kubernetes/${each.key}")
-  
+
   depends_on = [kubernetes_namespace.demo_apps, kubernetes_secret.mysql_secrets, kubernetes_secret.backend_secrets]
 }
 

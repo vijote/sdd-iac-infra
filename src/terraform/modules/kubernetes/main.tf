@@ -35,6 +35,16 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
+resource "tls_private_key" "k8s_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "k8s_key" {
+  key_name   = "${var.cluster_name}-ssh-key"
+  public_key = tls_private_key.k8s_key.public_key_openssh
+}
+
 # Control plane instance
 resource "aws_instance" "control_plane" {
   ami                    = data.aws_ami.ubuntu.id
@@ -42,7 +52,8 @@ resource "aws_instance" "control_plane" {
   subnet_id              = var.subnet_ids[0]
   vpc_security_group_ids = var.security_group_ids
   user_data              = file("${path.module}/cloud-init/control-plane.yaml")
-
+  key_name = aws_key_pair.k8s_key.key_name
+  
   tags = {
     Name        = "${var.cluster_name}-control-plane"
     Environment = var.environment

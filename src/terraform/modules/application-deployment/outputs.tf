@@ -45,7 +45,7 @@ output "ingress_url" {
 
 output "deployment_instructions" {
   description = "Instructions for accessing the deployed applications"
-  value = <<-EOT
+  value       = <<-EOT
     Applications deployed successfully!
     
     Access URLs:

@@ -1,0 +1,109 @@
+---
+# Ingress Class Configuration
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/component: ingressclass
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: "true"
+    description: "Default NGINX ingress class for application routing"
+spec:
+  controller: k8s.io/ingress-nginx
+  parameters:
+    apiGroup: k8s.nginx.org
+    kind: IngressParameters
+    name: nginx-parameters
+
+---
+# Ingress Parameters for path-based routing
+apiVersion: k8s.nginx.org/v1alpha1
+kind: IngressParameters
+metadata:
+  name: nginx-parameters
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/component: ingress-parameters
+  annotations:
+    description: "NGINX ingress controller parameters for path-based routing"
+spec:
+  # Path-based routing configuration
+  server-snippets: |
+    location /api/ {
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Forwarded-Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_pass http://upstream_balancer;
+    }
+    
+    location / {
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Forwarded-Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      try_files $uri $uri/ /index.html;
+    }
+  
+  # TLS configuration
+  ssl-protocols: "TLSv1.2 TLSv1.3"
+  ssl-ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384"
+  ssl-prefer-server-ciphers: "true"
+  
+  # Security headers
+  configuration-snippet: |
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'self';" always;
+  
+  # Rate limiting
+  rate-limit-connections: "100"
+  rate-limit-requests-per-second: "50"
+  rate-limit-window: "1m"
+
+---
+# Example Ingress for path-based routing
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-path-routing
+  namespace: application-infrastructure
+  labels:
+    app.kubernetes.io/name: example-ingress
+    app.kubernetes.io/component: routing-example
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    description: "Example ingress demonstrating path-based routing with SPA at root and API at /api/*"
+spec:
+  tls:
+  - hosts:
+    - ${DOMAIN_NAME}
+    secretName: ${DOMAIN_NAME}-tls
+  rules:
+  - host: ${DOMAIN_NAME}
+    http:
+      paths:
+      # SPA at root path
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: spa-service
+            port:
+              number: 80
+      # API at /api/* path
+      - path: /api(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 8080
