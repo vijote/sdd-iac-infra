@@ -95,6 +95,44 @@ jobs:
           EOF
           chmod 600 ~/.kube/config
 
+      - name: Auto-Cleanup Orphan Network Interfaces (ENIs)
+        run: |
+          echo "Buscando VPC del entorno '${{ env.ENVIRONMENT }}'..."
+          
+          # 1. Obtener la VPC correspondiente
+          VPC_ID=$(aws ec2 describe-vpcs \
+            --filters "Name=tag:Name,Values=*${{ env.ENVIRONMENT }}*" \
+            --query "Vpcs[0].VpcId" --output text)
+
+          if [ -n "$VPC_ID" ] && [ "$VPC_ID" != "None" ]; then
+            echo "VPC identificada: $VPC_ID"
+
+            # 2. Desconectar y eliminar todas las ENIs pertenecientes a esa VPC
+            ENIS=$(aws ec2 describe-network-interfaces \
+              --filters "Name=vpc-id,Values=$VPC_ID" \
+              --query "NetworkInterfaces[*].NetworkInterfaceId" --output text)
+
+            for eni in $ENIS; do
+              echo "Procesando ENI: $eni"
+              
+              # Obtener attachment si existe
+              ATTACHMENT=$(aws ec2 describe-network-interfaces \
+                --network-interface-ids "$eni" \
+                --query "NetworkInterfaces[0].Attachment.AttachmentId" --output text)
+
+              if [ -n "$ATTACHMENT" ] && [ "$ATTACHMENT" != "None" ]; then
+                echo "Desconectando attachment $ATTACHMENT..."
+                aws ec2 detach-network-interface --attachment-id "$ATTACHMENT" --force || true
+                sleep 3
+              fi
+
+              echo "Eliminando ENI $eni..."
+              aws ec2 delete-network-interface --network-interface-id "$eni" || true
+            done
+          else
+            echo "No se encontró VPC activa para el entorno."
+          fi
+
       - name: Terraform Destroy
         id: destroy
         run: |
