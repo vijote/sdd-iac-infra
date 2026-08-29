@@ -3,10 +3,6 @@ name: "Unlock Terraform State"
 on:
   workflow_dispatch:
     inputs:
-      bucket:
-        description: 'S3 bucket containing Terraform state'
-        required: true
-        type: string
       state_key:
         description: 'Terraform state file key (without .tflock extension)'
         required: true
