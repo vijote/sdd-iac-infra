@@ -94,13 +94,13 @@ jobs:
               token: dummy-token
           EOF
           chmod 600 ~/.kube/config
-          
+
       - name: Terraform Destroy
         id: destroy
         run: |
           cd src/terraform/environments/${{ env.ENVIRONMENT }}
           
           # Execute destruction
-          terraform destroy -input=false -auto-approve
+          terraform destroy -refresh=false -input=false -auto-approve
           
           echo "✅ Destruction completed"
