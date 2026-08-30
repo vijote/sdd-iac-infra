@@ -86,6 +86,9 @@ resource "kubectl_manifest" "deployments" {
       environment = var.environment
       mysql_database = var.mysql_database
       mysql_user     = var.mysql_user
+      mysql_storage_class = var.mysql_storage_class
+      frontend_replicas = var.frontend_replicas
+      mysql_replicas = var.mysql_replicas
     }
   )
 
