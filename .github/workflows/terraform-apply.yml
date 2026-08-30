@@ -183,24 +183,27 @@ jobs:
           export mysql_database="demo_app"
           export mysql_user="demo_user"
 
-          # 2. Extraer y exportar dinámicamente todas las claves del output de Terraform
-          eval $(terraform output -json app_config | jq -r 'to_entries[] | "export " + .key + "=\"" + (.value | tostring) + "\""')
+          # 2. Extraer y exportar dinámicamente asegurando valores sin comillas extra
+          eval $(terraform output -json app_config | jq -r 'to_entries[] | "export " + .key + "=\( .value | @sh )"')
 
-          # 3. Construir la lista $VARS automáticamente agregando prefijo '$' a cada clave
+          # 3. Construir la lista $VARS automáticamente
           TF_VARS=$(terraform output -json app_config | jq -r 'keys | map("$" + .) | join(":")')
           VARS="\$environment:\$mysql_database:\$mysql_user:${TF_VARS}"
 
-          echo "Variables detectadas automáticamente para envsubst: $VARS"
+          echo "Variables detectadas para envsubst: $VARS"
 
           cd src/terraform/modules/application-deployment/kubernetes
 
-          # 4. Aplicar los manifiestos YAML
+          # 4. Inspeccionar y aplicar los manifiestos YAML
           for f in $(find . -type f -name "*.yaml"); do
+            echo "================================================"
             echo "Aplicando manifiesto: $f"
-            envsubst "$VARS" < "$f" | kubectl apply -f -
+            # Imprime el YAML renderizado para validar qué valor llega a K8s
+            envsubst "$VARS" < "$f" | tee /tmp/rendered.yaml | kubectl apply -f -
           done
 
-          # 5. Verificación activa
+          # 5. Verificación activa de despliegue
+          echo "Verificando estado de despliegue..."
           kubectl rollout status deployment/mysql -n demo-apps --timeout=180s
           kubectl rollout status deployment/backend -n demo-apps --timeout=180s
           kubectl rollout status deployment/frontend -n demo-apps --timeout=180s
