@@ -136,6 +136,25 @@ jobs:
             echo "No se encontró VPC activa para el entorno."
           fi
 
+      - name: Purge Kubernetes and Helm Resources from State
+        run: |
+          cd src/terraform/environments/${{ env.ENVIRONMENT }}
+          
+          echo "Removiendo módulos de Kubernetes y Helm del tfstate para evitar bloqueos de red..."
+          
+          # Remover módulos de aplicación e infraestructura K8s del estado
+          terraform state rm module.application_deployment || true
+          terraform state rm module.application_infrastructure || true
+
+          # Remover cualquier recurso individual de helm o kubernetes si estuvieran en la raíz
+          FORGOTTEN_RESOURCES=$(terraform state list | grep -E '^(kubernetes_|helm_)' || true)
+          if [ -n "$FORGOTTEN_RESOURCES" ]; then
+            for res in $FORGOTTEN_RESOURCES; do
+              echo "Removiendo del estado: $res"
+              terraform state rm "$res" || true
+            done
+          fi
+
       - name: Terraform Destroy
         id: destroy
         run: |
