@@ -10,5 +10,8 @@ output "app_config" {
     backend_memory_limit  = var.backend_memory_limit
     mysql_cpu_limit       = var.mysql_cpu_limit
     mysql_memory_limit    = var.mysql_memory_limit
+    frontend_replicas     = var.frontend_replicas
+    backend_replicas      = var.backend_replicas
+    mysql_replicas        = var.mysql_replicas
   }
 }
