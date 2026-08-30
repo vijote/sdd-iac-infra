@@ -200,6 +200,8 @@ jobs:
             envsubst "$VARS" < "$f" | kubectl apply -f -
           done
 
+          kubectl get nodes -o wide
+
           # 5. Verificación activa de MySQL con captura diagnóstica en caso de fallo
           echo "Verificando el despliegue de MySQL..."
           kubectl rollout status deployment/mysql -n demo-apps --timeout=180s || {
