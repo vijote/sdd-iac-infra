@@ -58,6 +58,7 @@ Resources:
                   - iam:UntagRole
                   - iam:ListRolePolicies
                   - iam:GetPolicy
+                  - iam:GetPolicyVersion
 
                   # Gestión de Adjuntos de Políticas (ej: AmazonEBSCSIDriverPolicy)
                   - iam:AttachRolePolicy
