@@ -145,6 +145,10 @@ resource "helm_release" "ebs_csi_driver" {
   namespace  = "kube-system"
   version    = "2.20.0"
 
+  # Desactivar bloqueo estricto y limpiar si falla
+  wait             = false
+  cleanup_on_fail  = true
+
   set {
     name  = "controller.serviceAccount.create"
     value = "true"
