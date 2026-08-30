@@ -99,6 +99,7 @@ resource "kubectl_manifest" "deployments" {
       mysql_memory_limit = var.mysql_memory_limit
       backend_cpu_limit = var.backend_cpu_limit
       frontend_memory_limit = var.frontend_memory_limit
+      backend_memory_limit = var.backend_memory_limit
     }
   )
 
