@@ -80,7 +80,7 @@ resource "kubernetes_secret" "backend_secrets" {
 resource "kubectl_manifest" "deployments" {
   for_each = fileset("${path.module}/kubernetes", "**/*.yaml")
 
-  yaml_body = file("${path.module}/kubernetes/${each.key}")
+  yaml_body = templatefile("${path.module}/kubernetes/${each.key}")
 
   depends_on = [kubernetes_namespace.demo_apps, kubernetes_secret.mysql_secrets, kubernetes_secret.backend_secrets]
 }
