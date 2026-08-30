@@ -79,6 +79,8 @@ resource "kubernetes_secret" "backend_secrets" {
 # Deploy all Kubernetes manifests interpreting Terraform template variables
 resource "kubectl_manifest" "deployments" {
   for_each = fileset("${path.module}/kubernetes", "**/*.yaml")
+  # Evita que el proveedor se quede bloqueado esperando a que los Pods estén 100% listos
+  wait = false
 
   yaml_body = templatefile(
     "${path.module}/kubernetes/${each.key}",
