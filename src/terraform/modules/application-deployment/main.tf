@@ -76,13 +76,22 @@ resource "kubernetes_secret" "backend_secrets" {
   depends_on = [kubernetes_namespace.demo_apps]
 }
 
-# Deploy all Kubernetes manifests from the kubernetes directory (except secrets)
+# Deploy all Kubernetes manifests interpreting Terraform template variables
 resource "kubectl_manifest" "deployments" {
   for_each = fileset("${path.module}/kubernetes", "**/*.yaml")
 
-  yaml_body = templatefile("${path.module}/kubernetes/${each.key}", "**/*.yaml")
+  yaml_body = templatefile(
+    "${path.module}/kubernetes/${each.key}",
+    {
+      environment = var.environment
+    }
+  )
 
-  depends_on = [kubernetes_namespace.demo_apps, kubernetes_secret.mysql_secrets, kubernetes_secret.backend_secrets]
+  depends_on = [
+    kubernetes_namespace.demo_apps,
+    kubernetes_secret.mysql_secrets,
+    kubernetes_secret.backend_secrets
+  ]
 }
 
 # Note: Deployment readiness is handled by Kubernetes automatically
