@@ -176,13 +176,20 @@ resource "helm_release" "cert_manager" {
   create_namespace = true
   version    = "v1.13.2"
 
-  # Desactivar bloqueo estricto y limpiar si falla
+  # 1. Desactivar Hooks de Helm (Evita que el job post-install cause timeout)
+  disable_webhooks         = true
   wait             = false
   cleanup_on_fail  = true
 
   set {
     name  = "installCRDs"
     value = "true"
+  }
+
+  # 2. Desactivar el chequeo interno de la API que causa el bloqueo
+  set {
+    name  = "startupapicheck.enabled"
+    value = "false"
   }
 
   set {
