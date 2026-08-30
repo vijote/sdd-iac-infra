@@ -47,7 +47,7 @@ resource "aws_key_pair" "k8s_key" {
 
 # 1. Rol de IAM para las instancias EC2 del clúster
 resource "aws_iam_role" "k8s_nodes_role" {
-  name = "k8s-nodes-ssm-role"
+  name = "${var.cluster_name}-nodes-ssm-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -65,7 +65,7 @@ resource "aws_iam_role" "k8s_nodes_role" {
 
 # 2. Política para permitir guardar y leer el token de join en SSM
 resource "aws_iam_policy" "k8s_ssm_policy" {
-  name        = "k8s-ssm-join-policy"
+  name        = "${var.cluster_name}-ssm-join-policy"
   description = "Permite a los nodos del clúster publicar y leer la orden de join en SSM"
 
   policy = jsonencode({
@@ -75,7 +75,9 @@ resource "aws_iam_policy" "k8s_ssm_policy" {
         Effect = "Allow"
         Action = [
           "ssm:PutParameter",
-          "ssm:GetParameter"
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:AddTagsToResource"
         ]
         Resource = "arn:aws:ssm:*:*:parameter/k8s/kubeadm/join-command"
       }
@@ -83,28 +85,40 @@ resource "aws_iam_policy" "k8s_ssm_policy" {
   })
 }
 
-# 3. Adjuntar la política al rol
+# 3. Adjuntar la política SSM al rol
 resource "aws_iam_role_policy_attachment" "attach_k8s_ssm" {
   role       = aws_iam_role.k8s_nodes_role.name
   policy_arn = aws_iam_policy.k8s_ssm_policy.arn
 }
 
-# 4. Crear el Instance Profile que se asignará a las instancias EC2
+# 4. Adjuntar la política del EBS CSI Driver al rol (Permite a MySQL crear discos EBS)
+resource "aws_iam_role_policy_attachment" "attach_ebs_csi" {
+  role       = aws_iam_role.k8s_nodes_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+}
+
+# 5. Crear el Instance Profile que se asignará a las instancias EC2
 resource "aws_iam_instance_profile" "k8s_nodes_profile" {
-  name = "k8s-nodes-instance-profile"
+  name = "${var.cluster_name}-nodes-instance-profile"
   role = aws_iam_role.k8s_nodes_role.name
 }
 
 # Control plane instance
 resource "aws_instance" "control_plane" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.control_plane_instance_type
+  ami                  = data.aws_ami.ubuntu.id
+  instance_type        = var.control_plane_instance_type
   iam_instance_profile = aws_iam_instance_profile.k8s_nodes_profile.name
-  subnet_id              = var.subnet_ids[0]
+  subnet_id            = var.subnet_ids[0]
   vpc_security_group_ids = var.security_group_ids
-  user_data              = file("${path.module}/cloud-init/control-plane.yaml")
-  key_name = aws_key_pair.k8s_key.key_name
+  user_data            = file("${path.module}/cloud-init/control-plane.yaml")
+  key_name             = aws_key_pair.k8s_key.key_name
   
+  # Forzar que el rol y sus adjuntos estén 100% creados antes de lanzar la EC2
+  depends_on = [
+    aws_iam_role_policy_attachment.attach_k8s_ssm,
+    aws_iam_role_policy_attachment.attach_ebs_csi
+  ]
+
   tags = {
     Name        = "${var.cluster_name}-control-plane"
     Environment = var.environment
@@ -120,15 +134,20 @@ resource "aws_instance" "control_plane" {
 
 # Worker instances
 resource "aws_instance" "workers" {
-  count                  = var.worker_count
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.worker_instance_type
+  count                = var.worker_count
+  ami                  = data.aws_ami.ubuntu.id
+  instance_type        = var.worker_instance_type
   iam_instance_profile = aws_iam_instance_profile.k8s_nodes_profile.name
-  subnet_id              = var.subnet_ids[count.index % length(var.subnet_ids)]
+  subnet_id            = var.subnet_ids[count.index % length(var.subnet_ids)]
   vpc_security_group_ids = var.security_group_ids
   user_data = templatefile("${path.module}/cloud-init/worker.yaml", {
     CONTROL_PLANE_IP = aws_instance.control_plane.private_ip
   })
+
+  depends_on = [
+    aws_iam_role_policy_attachment.attach_k8s_ssm,
+    aws_iam_role_policy_attachment.attach_ebs_csi
+  ]
 
   tags = {
     Name        = "${var.cluster_name}-worker-${count.index + 1}"
