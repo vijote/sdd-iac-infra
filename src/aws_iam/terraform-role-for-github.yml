@@ -65,6 +65,8 @@ Resources:
                   - iam:PutRolePolicy
                   - iam:GetRolePolicy
                   - iam:DeleteRolePolicy
+                  - iam:CreatePolicy
+                  - iam:CreateRole
 
                   # Gestión de Instance Profiles para EC2
                   - iam:CreateInstanceProfile
@@ -189,8 +191,6 @@ Resources:
                   - iam:PutRolePolicy
                   - iam:GetRolePolicy
                   - iam:DeleteRolePolicy
-                  - iam:CreatePolicy
-                  - iam:CreateRole
                 Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/github-roles/*'
 
 Outputs:
