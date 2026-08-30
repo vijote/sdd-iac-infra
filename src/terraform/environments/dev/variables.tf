@@ -96,7 +96,7 @@ variable "frontend_image" {
 variable "backend_image" {
   description = "Backend container image"
   type        = string
-  default     = "node:18.17-alpine"
+  default     = "mendhak/http-https-echo:latest"
 }
 
 variable "mysql_image" {
