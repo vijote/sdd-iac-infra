@@ -13,5 +13,7 @@ output "app_config" {
     frontend_replicas     = var.frontend_replicas
     backend_replicas      = var.backend_replicas
     mysql_replicas        = var.mysql_replicas
+    mysql_storage_size    = var.mysql_storage_size
+    mysql_storage_class   = var.mysql_storage_class
   }
 }
