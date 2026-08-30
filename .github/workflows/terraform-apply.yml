@@ -192,10 +192,16 @@ jobs:
           TF_VARS=$(terraform output -json app_config | jq -r 'keys | map("$" + .) | join(":")')
           VARS="\$environment:\$mysql_database:\$mysql_user:${TF_VARS}"
 
-          # 4. Ir a la carpeta de los manifiestos YAML
+          # 4. Ir a la carpeta de los manifiestos YAML y aplicarlos
           cd ../../modules/application-deployment/kubernetes
 
-          # Verificación activa con captura de errores
+          for f in $(find . -type f -name "*.yaml"); do
+            echo "Aplicando manifiesto: $f"
+            envsubst "$VARS" < "$f" | kubectl apply -f -
+          done
+
+          # 5. Verificación activa de MySQL con captura diagnóstica en caso de fallo
+          echo "Verificando el despliegue de MySQL..."
           kubectl rollout status deployment/mysql -n demo-apps --timeout=180s || {
             echo "=== ERROR DETECTADO EN MYSQL ==="
             echo "--- Estado del Pod ---"
@@ -209,13 +215,7 @@ jobs:
             exit 1
           }
 
-          # 5. Aplicar manifiestos
-          for f in $(find . -type f -name "*.yaml"); do
-            echo "Aplicando manifiesto: $f"
-            envsubst "$VARS" < "$f" | kubectl apply -f -
-          done
-
-          # 6. Verificación activa
-          kubectl rollout status deployment/mysql -n demo-apps --timeout=180s
+          # 6. Verificación activa de Backend y Frontend
+          echo "Verificando el despliegue de Backend y Frontend..."
           kubectl rollout status deployment/backend -n demo-apps --timeout=180s
           kubectl rollout status deployment/frontend -n demo-apps --timeout=180s
