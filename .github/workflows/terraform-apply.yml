@@ -195,6 +195,20 @@ jobs:
           # 4. Ir a la carpeta de los manifiestos YAML
           cd ../../modules/application-deployment/kubernetes
 
+          # Verificación activa con captura de errores
+          kubectl rollout status deployment/mysql -n demo-apps --timeout=180s || {
+            echo "=== ERROR DETECTADO EN MYSQL ==="
+            echo "--- Estado del Pod ---"
+            kubectl get pods -n demo-apps -l app=mysql -o wide
+            echo "--- Eventos del Pod / Problemas de Scheduling o PVC ---"
+            kubectl describe pods -n demo-apps -l app=mysql
+            echo "--- Estado del PersistentVolumeClaim ---"
+            kubectl get pvc -n demo-apps
+            echo "--- Logs del Contenedor ---"
+            kubectl logs -n demo-apps -l app=mysql --tail=50
+            exit 1
+          }
+
           # 5. Aplicar manifiestos
           for f in $(find . -type f -name "*.yaml"); do
             echo "Aplicando manifiesto: $f"
