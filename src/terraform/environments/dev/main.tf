@@ -70,7 +70,7 @@ module "kubernetes" {
   ]
 
   control_plane_instance_type = "t2.medium"
-  worker_instance_type        = "t2.micro"
+  worker_instance_type        = "t2.small"
   worker_count                = 2
 }
 

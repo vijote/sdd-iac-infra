@@ -139,7 +139,7 @@ variable "mysql_cpu_limit" {
 variable "mysql_memory_limit" {
   description = "MySQL memory limit"
   type        = string
-  default     = "512Mi"
+  default     = "1Gi"
 }
 
 variable "jwt_secret" {
