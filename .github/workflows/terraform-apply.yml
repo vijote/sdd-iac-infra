@@ -178,32 +178,30 @@ jobs:
 
       - name: Deploy Kubernetes Manifests & Wait for Readiness
         run: |
-          # 1. Variables globales o estáticas
+          # 1. Asegurar que estamos en el directorio donde se ejecutó Terraform
+          cd src/terraform/environments/dev
+
+          # 2. Exportar variables dinámicamente desde el estado de Terraform
+          eval $(terraform output -json app_config | jq -r 'to_entries[] | "export " + .key + "=\( .value | @sh )"')
+
           export environment="${{ env.ENVIRONMENT }}"
           export mysql_database="demo_app"
           export mysql_user="demo_user"
 
-          # 2. Extraer y exportar dinámicamente asegurando valores sin comillas extra
-          eval $(terraform output -json app_config | jq -r 'to_entries[] | "export " + .key + "=\( .value | @sh )"')
-
-          # 3. Construir la lista $VARS automáticamente
+          # 3. Construir la lista de variables automáticamente
           TF_VARS=$(terraform output -json app_config | jq -r 'keys | map("$" + .) | join(":")')
           VARS="\$environment:\$mysql_database:\$mysql_user:${TF_VARS}"
 
-          echo "Variables detectadas para envsubst: $VARS"
+          # 4. Ir a la carpeta de los manifiestos YAML
+          cd ../../modules/application-deployment/kubernetes
 
-          cd src/terraform/modules/application-deployment/kubernetes
-
-          # 4. Inspeccionar y aplicar los manifiestos YAML
+          # 5. Aplicar manifiestos
           for f in $(find . -type f -name "*.yaml"); do
-            echo "================================================"
             echo "Aplicando manifiesto: $f"
-            # Imprime el YAML renderizado para validar qué valor llega a K8s
-            envsubst "$VARS" < "$f" | tee /tmp/rendered.yaml | kubectl apply -f -
+            envsubst "$VARS" < "$f" | kubectl apply -f -
           done
 
-          # 5. Verificación activa de despliegue
-          echo "Verificando estado de despliegue..."
+          # 6. Verificación activa
           kubectl rollout status deployment/mysql -n demo-apps --timeout=180s
           kubectl rollout status deployment/backend -n demo-apps --timeout=180s
           kubectl rollout status deployment/frontend -n demo-apps --timeout=180s
