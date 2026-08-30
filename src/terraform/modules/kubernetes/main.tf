@@ -45,10 +45,61 @@ resource "aws_key_pair" "k8s_key" {
   public_key = tls_private_key.k8s_key.public_key_openssh
 }
 
+# 1. Rol de IAM para las instancias EC2 del clúster
+resource "aws_iam_role" "k8s_nodes_role" {
+  name = "k8s-nodes-ssm-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# 2. Política para permitir guardar y leer el token de join en SSM
+resource "aws_iam_policy" "k8s_ssm_policy" {
+  name        = "k8s-ssm-join-policy"
+  description = "Permite a los nodos del clúster publicar y leer la orden de join en SSM"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:PutParameter",
+          "ssm:GetParameter"
+        ]
+        Resource = "arn:aws:ssm:*:*:parameter/k8s/kubeadm/join-command"
+      }
+    ]
+  })
+}
+
+# 3. Adjuntar la política al rol
+resource "aws_iam_role_policy_attachment" "attach_k8s_ssm" {
+  role       = aws_iam_role.k8s_nodes_role.name
+  policy_arn = aws_iam_policy.k8s_ssm_policy.arn
+}
+
+# 4. Crear el Instance Profile que se asignará a las instancias EC2
+resource "aws_iam_instance_profile" "k8s_nodes_profile" {
+  name = "k8s-nodes-instance-profile"
+  role = aws_iam_role.k8s_nodes_role.name
+}
+
 # Control plane instance
 resource "aws_instance" "control_plane" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.control_plane_instance_type
+  iam_instance_profile = aws_iam_instance_profile.k8s_nodes_profile.name
   subnet_id              = var.subnet_ids[0]
   vpc_security_group_ids = var.security_group_ids
   user_data              = file("${path.module}/cloud-init/control-plane.yaml")
@@ -72,6 +123,7 @@ resource "aws_instance" "workers" {
   count                  = var.worker_count
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.worker_instance_type
+  iam_instance_profile = aws_iam_instance_profile.k8s_nodes_profile.name
   subnet_id              = var.subnet_ids[count.index % length(var.subnet_ids)]
   vpc_security_group_ids = var.security_group_ids
   user_data = templatefile("${path.module}/cloud-init/worker.yaml", {
