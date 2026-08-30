@@ -84,6 +84,8 @@ resource "kubectl_manifest" "deployments" {
     "${path.module}/kubernetes/${each.key}",
     {
       environment = var.environment
+      mysql_database = var.mysql_database
+      mysql_user     = var.mysql_user
     }
   )
 
