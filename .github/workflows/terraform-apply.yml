@@ -217,7 +217,18 @@ jobs:
             exit 1
           }
 
-          # 6. Verificación activa de Backend y Frontend
-          echo "Verificando el despliegue de Backend y Frontend..."
-          kubectl rollout status deployment/backend -n demo-apps --timeout=180s
+          # Verificación activa del Backend con captura de logs
+          echo "Verificando el despliegue de Backend..."
+          kubectl rollout status deployment/backend -n demo-apps --timeout=180s || {
+            echo "=== ERROR DETECTADO EN BACKEND ==="
+            echo "--- Estado de los Pods ---"
+            kubectl get pods -n demo-apps -l app=backend -o wide
+            echo "--- Eventos del Deployment / Pod ---"
+            kubectl describe pods -n demo-apps -l app=backend
+            echo "--- Logs del Contenedor Backend ---"
+            kubectl logs -n demo-apps -l app=backend --tail=50
+            exit 1
+          }
+
+          echo "Verificando el despliegue de Frontend..."
           kubectl rollout status deployment/frontend -n demo-apps --timeout=180s
