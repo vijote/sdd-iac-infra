@@ -2,6 +2,8 @@
 
 # Configure Kubernetes provider
 provider "kubernetes" {
+  config_path = "~/.kube/config"
+  
   host                   = var.cluster_endpoint
   cluster_ca_certificate = var.cluster_ca_certificate
   token                  = var.cluster_token
