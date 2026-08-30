@@ -335,9 +335,16 @@ resource "helm_release" "nginx_ingress" {
   namespace  = var.namespace
   version    = "4.8.3"
 
-  # Desactivar bloqueo estricto y limpiar si falla
+  # 1. Desactivar Hooks de Helm (Evita el bloqueo en pre-install y post-install)
+  disable_webhooks = true
   wait             = false
   cleanup_on_fail  = true
+
+  # 2. Desactivar los Jobs de admission webhook que causan la espera
+  set {
+    name  = "controller.admissionWebhooks.enabled"
+    value = "false"
+  }
 
   set {
     name  = "controller.ingressClassResource.name"
