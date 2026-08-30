@@ -3,7 +3,8 @@
 # Configure Kubernetes provider
 provider "kubernetes" {
   config_path = "~/.kube/config"
-  
+  insecure = true
+
   host                   = var.cluster_endpoint
   cluster_ca_certificate = var.cluster_ca_certificate
   token                  = var.cluster_token
@@ -11,7 +12,9 @@ provider "kubernetes" {
 
 # Configure kubectl provider
 provider "kubectl" {
-  load_config_file       = false
+  config_path = "~/.kube/config"
+  insecure    = true
+  
   host                   = var.cluster_endpoint
   cluster_ca_certificate = var.cluster_ca_certificate
   token                  = var.cluster_token

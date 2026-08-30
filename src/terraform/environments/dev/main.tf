@@ -22,6 +22,7 @@ terraform {
 provider "kubernetes" {
   # CI/CD environment - explicitly disable config_path to prevent kubeconfig lookup
   config_path = "~/.kube/config"
+  insecure = true
 
   # Use direct cluster configuration or environment variables
   host                   = var.cluster_endpoint != "" ? var.cluster_endpoint : null
@@ -34,6 +35,7 @@ provider "helm" {
   kubernetes {
     # CI/CD environment - explicitly disable config_path to prevent kubeconfig lookup
     config_path = "~/.kube/config"
+    insecure = true
 
     # Use direct cluster configuration or environment variables
     host                   = var.cluster_endpoint != "" ? var.cluster_endpoint : null
