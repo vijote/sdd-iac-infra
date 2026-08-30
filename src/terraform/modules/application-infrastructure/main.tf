@@ -173,6 +173,7 @@ resource "helm_release" "cert_manager" {
   repository = "https://charts.jetstack.io"
   chart      = "cert-manager"
   namespace  = var.namespace
+  create_namespace = true
   version    = "v1.13.2"
 
   # Desactivar bloqueo estricto y limpiar si falla
