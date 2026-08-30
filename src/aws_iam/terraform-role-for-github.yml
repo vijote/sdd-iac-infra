@@ -61,6 +61,7 @@ Resources:
                   - iam:GetPolicyVersion
                   - iam:ListPolicyVersions
                   - iam:DeletePolicy
+                  - iam:ListInstanceProfilesForRole
 
                   # Gestión de Adjuntos de Políticas (ej: AmazonEBSCSIDriverPolicy)
                   - iam:AttachRolePolicy
