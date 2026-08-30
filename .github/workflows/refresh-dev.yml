@@ -1,4 +1,4 @@
-name: Refresh Dev Environment State
+name: Refresh
 
 on:
   workflow_dispatch:

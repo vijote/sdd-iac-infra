@@ -1,4 +1,4 @@
-name: "Unlock Terraform State"
+name: "Unlock State"
 
 on:
   workflow_dispatch:
