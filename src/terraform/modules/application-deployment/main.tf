@@ -93,6 +93,9 @@ resource "kubectl_manifest" "deployments" {
       mysql_storage_size = var.mysql_storage_size
       backend_replicas = var.backend_replicas
       frontend_image = var.frontend_image
+      mysql_cpu_limit = var.mysql_cpu_limit
+      backend_image = var.backend_image
+      frontend_cpu_limit = var.frontend_cpu_limit
     }
   )
 
