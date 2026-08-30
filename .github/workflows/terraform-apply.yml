@@ -40,7 +40,7 @@ jobs:
   apply-base-infra:
     name: "Phase 1: Base Infrastructure (VPC & EC2)"
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
