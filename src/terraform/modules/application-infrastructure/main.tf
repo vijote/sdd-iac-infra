@@ -175,6 +175,10 @@ resource "helm_release" "cert_manager" {
   namespace  = var.namespace
   version    = "v1.13.2"
 
+  # Desactivar bloqueo estricto y limpiar si falla
+  wait             = false
+  cleanup_on_fail  = true
+
   set {
     name  = "installCRDs"
     value = "true"
@@ -322,6 +326,10 @@ resource "helm_release" "nginx_ingress" {
   chart      = "ingress-nginx"
   namespace  = var.namespace
   version    = "4.8.3"
+
+  # Desactivar bloqueo estricto y limpiar si falla
+  wait             = false
+  cleanup_on_fail  = true
 
   set {
     name  = "controller.ingressClassResource.name"
