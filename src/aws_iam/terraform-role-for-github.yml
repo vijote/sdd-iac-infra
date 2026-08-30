@@ -41,6 +41,50 @@ Resources:
                   - s3:DeleteObject
                 Resource: !Sub 'arn:aws:s3:::${TerraformStateBucketName}/*'
 
+        # Permisos para administración de Roles de IAM e Instance Profiles de EC2
+        - PolicyName: ManageIAMRolesAndProfiles
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  # Gestión de Roles
+                  - iam:CreateRole
+                  - iam:DeleteRole
+                  - iam:GetRole
+                  - iam:ListRoles
+                  - iam:UpdateRole
+                  - iam:TagRole
+                  - iam:UntagRole
+                  - iam:ListRolePolicies
+
+                  # Gestión de Adjuntos de Políticas (ej: AmazonEBSCSIDriverPolicy)
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                  - iam:ListAttachedRolePolicies
+                  - iam:PutRolePolicy
+                  - iam:GetRolePolicy
+                  - iam:DeleteRolePolicy
+
+                  # Gestión de Instance Profiles para EC2
+                  - iam:CreateInstanceProfile
+                  - iam:DeleteInstanceProfile
+                  - iam:GetInstanceProfile
+                  - iam:ListInstanceProfiles
+                  - iam:AddRoleToInstanceProfile
+                  - iam:RemoveRoleFromInstanceProfile
+
+                Resource: '*'
+
+              # Permiso para pasar el Rol IAM a las instancias EC2
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: ec2.amazonaws.com
+                    
         # 2. Permisos para administración de VPC y Redes
         - PolicyName: ManageVPCResources
           PolicyDocument:
