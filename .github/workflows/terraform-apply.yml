@@ -176,3 +176,23 @@ jobs:
       - name: Terraform Apply Remaining Workloads
         run: terraform apply -input=false -auto-approve
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
+
+      - name: Deploy Kubernetes Manifests & Wait for Readiness
+        run: |
+          cd src/terraform/modules/application-deployment/kubernetes
+
+          # 1. Sustituir las variables en los YAML e instalarlos
+          export environment="${{ env.ENVIRONMENT }}"
+          export mysql_database="sdd_db"
+          export mysql_user="sdd_user"
+
+          for f in $(find . -type f -name "*.yaml"); do
+            echo "Aplicando manifiesto: $f"
+            envsubst < "$f" | kubectl apply -f -
+          done
+
+          # 2. ESPERA ACTIVA DE SEGURIDAD (Visibilidad Real)
+          echo "Verificando estado de despliegue..."
+          kubectl rollout status deployment/mysql -n demo-apps --timeout=180s
+          kubectl rollout status deployment/backend -n demo-apps --timeout=180s
+          kubectl rollout status deployment/frontend -n demo-apps --timeout=180s
