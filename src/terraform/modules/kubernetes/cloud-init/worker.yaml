@@ -2,15 +2,15 @@
 package_update: true
 package_upgrade: false
 
-# Install required packages
 packages:
   - apt-transport-https
   - ca-certificates
   - curl
   - gnupg
   - lsb-release
+  - netcat
+  - unzip
 
-# Write containerd configuration
 write_files:
   - path: /etc/modules-load.d/containerd.conf
     content: |
@@ -21,76 +21,53 @@ write_files:
       net.bridge.bridge-nf-call-iptables  = 1
       net.ipv4.ip_forward                 = 1
       net.bridge.bridge-nf-call-ip6tables = 1
-  - path: /etc/apt/sources.list.d/docker.list
-    content: |
-      deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu jammy stable
-  - path: /etc/apt/keyrings/docker.gpg
-    defer: true
-  - path: /etc/apt/sources.list.d/kubernetes.list
-    content: |
-      deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
-  - path: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-    defer: true
-  - path: /tmp/wait-for-control-plane.sh
-    content: |
-      #!/bin/bash
-      # Wait for control plane to be ready
-      CONTROL_PLANE_IP=${1}
-      echo "Waiting for control plane at ${CONTROL_PLANE_IP}:6443..."
-      
-      while ! nc -z ${CONTROL_PLANE_IP} 6443; do
-        echo "Control plane not ready, waiting 10 seconds..."
-        sleep 10
-      done
-      
-      echo "Control plane is ready!"
-    permissions: '0755'
 
-# Run commands to set up the worker node
 runcmd:
-  # Load kernel modules
+  # 1. Cargar módulos de Kernel y aplicar sysctl
   - modprobe overlay
   - modprobe br_netfilter
-  
-  # Apply sysctl settings
   - sysctl --system
-  
-  # Add Docker GPG key
+
+  # 2. Configurar llaves GPG y repositorios
   - install -m 0755 -d /etc/apt/keyrings
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
   - chmod a+r /etc/apt/keyrings/docker.gpg
-  
-  # Add Kubernetes GPG key
-  - curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-  - chmod a+r /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-  
-  # Update package lists
+  - echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list
+
+  - curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  - chmod a+r /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  - echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list
+
   - apt-get update
-  
-  # Install containerd
-  - apt-get install -y containerd.io
-  
-  # Configure containerd
+
+  # 3. Instalar containerd y componentes de Kubernetes
+  - apt-get install -y containerd.io kubelet kubeadm kubectl
+  - apt-mark hold kubelet kubeadm kubectl
+
+  # 4. Configurar e iniciar containerd
   - mkdir -p /etc/containerd
   - containerd config default | tee /etc/containerd/config.toml
   - sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
-  
-  # Restart containerd
   - systemctl restart containerd
   - systemctl enable containerd
-  
-  # Install Kubernetes components
-  - apt-get install -y kubelet kubeadm kubectl
-  - apt-mark hold kubelet kubeadm kubectl
-  
-  # Wait for control plane to be ready
-  - /tmp/wait-for-control-plane.sh ${CONTROL_PLANE_IP}
-  
-  # Get join command from control plane
-  - until scp -o StrictHostKeyChecking=no -i /tmp/ssh-key control-plane:/tmp/join-command.sh /tmp/join-command.sh; do echo "Waiting for join command..."; sleep 10; done
-  
-  # Execute join command
-  - bash /tmp/join-command.sh
 
-# Note: CONTROL_PLANE_IP_PLACEHOLDER will be replaced with actual IP during Terraform deployment
-final_message: "Worker node setup completed. Waiting to join cluster..."
+  # 5. Instalar AWS CLI v2
+  - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+  - unzip -q /tmp/awscliv2.zip -d /tmp
+  - /tmp/aws/install
+
+  # 6. Esperar a que el Control Plane publique la orden de join en SSM Parameter Store y ejecutarla
+  - |
+    TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+    REGION=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
+
+    echo "Esperando que la orden de kubeadm join esté disponible en SSM Parameter Store..."
+    until JOIN_CMD=$(aws ssm get-parameter --name "/k8s/kubeadm/join-command" --with-decryption --query "Parameter.Value" --output text --region $REGION 2>/dev/null); do
+      echo "Control Plane aún no ha publicado el token. Reintentando en 10 segundos..."
+      sleep 10
+    done
+
+    echo "Orden de join recibida. Uniendo worker al clúster..."
+    eval "$JOIN_CMD"
+
+final_message: "Worker node setup completed. Joined cluster successfully!"
