@@ -27,12 +27,6 @@ env:
   TF_VAR_aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
   TF_VAR_aws_terraform_role_name: ${{ vars.AWS_TERRAFORM_ROLE_NAME }}
   TF_VAR_aws_state_bucket_name: ${{ vars.STATE_BUCKET_NAME }}
-  TF_VAR_kubeconfig_path: ${{ vars.TF_VAR_kubeconfig_path || '~/.kube/config' }}
-
-  # Application secrets (from repository secrets)
-  TF_VAR_mysql_root_password: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-  TF_VAR_mysql_password: ${{ secrets.MYSQL_PASSWORD }}
-  TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
 
 jobs:
   # ==========================================
@@ -179,24 +173,29 @@ jobs:
 
       - name: Deploy Kubernetes Manifests & Wait for Readiness
         run: |
-          # 1. Extraer los valores dinámicos desde los outputs de Terraform
-          eval $(terraform output -json app_config | jq -r 'to_entries[] | "export " + .key + "=\"" + .value + "\""')
-
+          # 1. Variables globales o estáticas
           export environment="${{ env.ENVIRONMENT }}"
           export mysql_database="demo_app"
           export mysql_user="demo_user"
 
+          # 2. Extraer y exportar dinámicamente todas las claves del output de Terraform
+          eval $(terraform output -json app_config | jq -r 'to_entries[] | "export " + .key + "=\"" + (.value | tostring) + "\""')
+
+          # 3. Construir la lista $VARS automáticamente agregando prefijo '$' a cada clave
+          TF_VARS=$(terraform output -json app_config | jq -r 'keys | map("$" + .) | join(":")')
+          VARS="\$environment:\$mysql_database:\$mysql_user:${TF_VARS}"
+
+          echo "Variables detectadas automáticamente para envsubst: $VARS"
+
           cd src/terraform/modules/application-deployment/kubernetes
 
-          # 2. Lista de variables
-          VARS='$environment:$mysql_database:$mysql_user:$frontend_image:$backend_image:$mysql_image:$frontend_cpu_limit:$frontend_memory_limit:$backend_cpu_limit:$backend_memory_limit:$mysql_cpu_limit:$mysql_memory_limit'
-
+          # 4. Aplicar los manifiestos YAML
           for f in $(find . -type f -name "*.yaml"); do
             echo "Aplicando manifiesto: $f"
             envsubst "$VARS" < "$f" | kubectl apply -f -
           done
 
-          # 3. Verificación activa
+          # 5. Verificación activa
           kubectl rollout status deployment/mysql -n demo-apps --timeout=180s
           kubectl rollout status deployment/backend -n demo-apps --timeout=180s
           kubectl rollout status deployment/frontend -n demo-apps --timeout=180s
