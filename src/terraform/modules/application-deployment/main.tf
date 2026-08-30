@@ -89,6 +89,10 @@ resource "kubectl_manifest" "deployments" {
       mysql_storage_class = var.mysql_storage_class
       frontend_replicas = var.frontend_replicas
       mysql_replicas = var.mysql_replicas
+      mysql_image = var.mysql_image
+      mysql_storage_size = var.mysql_storage_size
+      backend_replicas = var.backend_replicas
+      frontend_image = var.frontend_image
     }
   )
 
