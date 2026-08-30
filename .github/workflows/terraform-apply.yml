@@ -28,6 +28,11 @@ env:
   TF_VAR_aws_terraform_role_name: ${{ vars.AWS_TERRAFORM_ROLE_NAME }}
   TF_VAR_aws_state_bucket_name: ${{ vars.STATE_BUCKET_NAME }}
 
+  # Vars for phase 1: base infrastructure
+  TF_VAR_mysql_root_password: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+  TF_VAR_mysql_password: ${{ secrets.MYSQL_PASSWORD }}
+  TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+
 jobs:
   # ==========================================
   # ETAPA 1: Provisionar Infraestructura Base (AWS EC2 + Kubeadm)
