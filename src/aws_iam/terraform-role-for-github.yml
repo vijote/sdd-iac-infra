@@ -189,6 +189,8 @@ Resources:
                   - iam:PutRolePolicy
                   - iam:GetRolePolicy
                   - iam:DeleteRolePolicy
+                  - iam:CreatePolicy
+                  - iam:CreateRole
                 Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/github-roles/*'
 
 Outputs:
