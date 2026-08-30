@@ -49,7 +49,7 @@ spec:
         volumeMounts:
         - name: mysql-storage
           mountPath: /var/lib/mysql
-        - name: mysql-config
+        - name: mysql-config-volume
           mountPath: /etc/mysql/conf.d
           readOnly: true
         resources:
@@ -59,10 +59,26 @@ spec:
           requests:
             cpu: "100m"
             memory: "256Mi"
+        readinessProbe:
+          tcpSocket:
+            port: 3306
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: 3306
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
       volumes:
       - name: mysql-storage
         persistentVolumeClaim:
           claimName: mysql-pvc
-      - name: mysql-config
+      - name: mysql-config-volume
         configMap:
           name: mysql-config
+          # 👈 CLAVE DE LA SOLUCIÓN: Solo montar 'my.cnf' como archivo
+          items:
+            - key: my.cnf
+              path: my.cnf
