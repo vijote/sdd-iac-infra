@@ -1,3 +1,5 @@
+# terraform-apply.yml
+
 name: "Apply"
 
 on:
@@ -82,7 +84,7 @@ jobs:
     name: "Phase 2: K8s Infrastructure & Apps"
     needs: apply-base-infra
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -166,7 +168,6 @@ jobs:
       - name: Verify Cluster Connectivity
         run: |
           kubectl cluster-info
-          kubectl get nodes
 
       - name: Terraform Init
         run: terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}"
@@ -175,6 +176,24 @@ jobs:
       - name: Terraform Apply Remaining Workloads
         run: terraform apply -input=false -auto-approve
         working-directory: src/terraform/environments/${{ env.ENVIRONMENT }}
+
+      # -------------------------------------------------------------
+      # 🚀 PASO CLAVE: ESPERAR WORKER NODES Y RED/ALMACENAMIENTO
+      # -------------------------------------------------------------
+      - name: Wait for Worker Nodes & Storage Infrastructure
+        run: |
+          echo "=== 1. Esperando a que se unan los 3 Nodos (1 Control Plane + 2 Workers) ==="
+          EXPECTED_NODES=3
+          until [ $(kubectl get nodes --no-headers 2>/dev/null | wc -l) -ge $EXPECTED_NODES ]; do
+            echo "Esperando que los Workers completen el cloud-init y se unan..."
+            sleep 10
+          done
+
+          echo "=== 2. Esperando a que TODOS los nodos estén en estado 'Ready' ==="
+          kubectl wait --for=condition=Ready node --all --timeout=300s
+
+          echo "=== 3. Estado final del Clúster ==="
+          kubectl get nodes -o wide
 
       - name: Deploy Kubernetes Manifests & Wait for Readiness
         run: |
@@ -199,8 +218,6 @@ jobs:
             echo "Aplicando manifiesto: $f"
             envsubst "$VARS" < "$f" | kubectl apply -f -
           done
-
-          kubectl get nodes -o wide
 
           # 5. Verificación activa de MySQL con captura diagnóstica en caso de fallo
           echo "Verificando el despliegue de MySQL..."
