@@ -26,7 +26,7 @@ spec:
         - name: NODE_ENV
           value: "${environment}"
         - name: PORT
-          value: "3000"
+          value: "8080"
         - name: DB_HOST
           value: "mysql-service"
         - name: DB_PORT
@@ -47,7 +47,7 @@ spec:
               name: backend-secrets
               key: database-password
         ports:
-        - containerPort: 3000
+        - containerPort: 8080
           name: http
         resources:
           limits:
@@ -59,13 +59,13 @@ spec:
         # Simple health check
         livenessProbe:
           httpGet:
-            path: /health
-            port: 3000
+            path: /
+            port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: /ready
-            port: 3000
+            path: /
+            port: 8080
           initialDelaySeconds: 5
           periodSeconds: 5
