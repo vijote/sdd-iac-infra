@@ -40,6 +40,7 @@ resource "aws_ssm_parameter" "kubeadm_join_command" {
   name        = "/k8s/kubeadm/join-command"
   description = "Comando de kubeadm join para los worker nodes"
   type        = "String"
+  overwrite   = true
   value       = "PENDING" # Valor inicial temporal que sobreescribirá el cloud-init del Control Plane
 
   lifecycle {
