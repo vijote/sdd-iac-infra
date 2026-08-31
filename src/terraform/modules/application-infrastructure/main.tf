@@ -35,6 +35,20 @@ resource "kubernetes_namespace" "application_infrastructure" {
   }
 }
 
+# Crear el parámetro en SSM para que Terraform controle su ciclo de vida y lo destruya automáticamente
+resource "aws_ssm_parameter" "kubeadm_join_command" {
+  name        = "/k8s/kubeadm/join-command"
+  description = "Comando de kubeadm join para los worker nodes"
+  type        = "String"
+  value       = "PENDING" # Valor inicial temporal que sobreescribirá el cloud-init del Control Plane
+
+  lifecycle {
+    ignore_changes = [
+      value, # Evita que Terraform sobrescriba el token generado por kubeadm en subsecuentes applies
+    ]
+  }
+}
+
 # Note: For kubeadm clusters, the EBS CSI driver uses EC2 instance profile
 # No IAM role needed here - the nodes use their instance profile for EBS access
 
