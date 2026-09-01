@@ -1,48 +1,35 @@
-# Production Environment
+﻿# `environments/prod/` — Production Environment
 
-This directory contains Terraform configuration for the production environment.
+This directory contains the Terraform root module for the **production** environment. It mirrors the `dev/` environment structure but with production-grade settings and manual-only deployment controls.
 
-## Configuration
+## Files
 
-- `backend.tf` - S3 backend configuration
-- `provider.tf` - AWS provider configuration
-- `terraform.tfvars` - Production-specific variables
+| File | Description |
+|------|-------------|
+| `backend.tf` | S3 remote state backend with a `prod`-scoped state key |
+| `provider.tf` | AWS provider targeting the production IAM role |
+| `main.tf` | Module calls for all infrastructure layers |
+| `variables.tf` | Variable declarations (larger instance types, prod CIDR ranges, etc.) |
+| `application-deployment.tf` | Calls the application-deployment module for prod workloads |
 
-## Usage
+## Key Differences from `dev/`
+
+- **No auto-deployment**: Production is never deployed automatically. All changes require a manual `workflow_dispatch` trigger with explicit environment selection.
+- **Approval gate**: The `prod` GitHub Actions environment requires reviewer approval.
+- **Larger instances**: Control plane uses `t3.medium`, workers use `t3.small`.
+- **Separate state**: State stored under a `prod/` prefix in the shared S3 bucket.
+
+## Deployment
 
 ```bash
+# Via GitHub Actions (recommended)
+# Navigate to Actions → Terraform Apply → Run Workflow → Select "prod"
+
+# Local (emergency only)
+cd src/terraform/environments/prod
 terraform init
-terraform plan -var-file="terraform.tfvars"
-terraform apply -var-file="terraform.tfvars"
+terraform plan
+terraform apply
 ```
 
-## Environment-Specific Settings
-
-- Uses least-privilege IAM role for production environment
-- State stored in production-specific S3 prefix
-- Resource tagging with environment=prod
-- Manual approval REQUIRED for all deployments (default behavior)
-
-## Deployment Process
-
-1. Changes are deployed via GitHub Actions
-2. Pull requests trigger terraform plan
-3. Merge to main branch triggers terraform apply
-4. **Manual approval required** before apply
-5. Multiple approvers may be required based on configuration
-
-## Security Considerations
-
-- Strictest IAM permissions (least privilege)
-- Enhanced monitoring and logging
-- All changes require manual review and approval
-- State backups retained for 1 year
-- Comprehensive audit trail enabled
-
-## State Management
-
-- Remote state stored in S3 with encryption
-- State locking with S3
-- Versioning enabled for state recovery
-- Extended backup retention (365 days)
-- Additional state monitoring and alerts
+> ⚠️ **Never** destroy the production environment using the destroy pipeline. Only `dev` destruction is supported.
